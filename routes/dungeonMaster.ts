@@ -1,10 +1,10 @@
 import express from 'express';
-import DungeonMasterController from '../services/DungeonMasterController';
+import DungeonMasterController from '../controllers/DungeonMasterController';
 
 const router = express.Router();
 
-// Get openai GPT3 response
-router.get('/openai', async (req, res) => {
+// Get DM Response (Single)
+router.get('/story/continue', async (req, res) => {
   var { message, sessionToken } = req.body;
   Promise.resolve(DungeonMasterController.getDMReply(message, sessionToken)).then((data) => {
     return res.json({ message: data });
@@ -20,8 +20,19 @@ router.get('/story/init', async (req, res) => {
 });
 
 // Get a specific user
-router.get('/:id', (req, res) => {
-  res.json({ message: `User with id ${req.params.id}` });
+router.get('/story/context', async (req, res) => {
+  var { sessionToken } = req.body;
+  Promise.resolve(DungeonMasterController.getContext(sessionToken)).then((data) => {
+    return res.json({ message: data });
+  });
+});
+
+// Get entire session history
+router.get('/story/history', async (req, res) => {
+  var { sessionToken } = req.body;
+  Promise.resolve(DungeonMasterController.getSessionHistory(sessionToken)).then((data) => {
+    return res.json({ message: data });
+  });
 });
 
 export default router;
