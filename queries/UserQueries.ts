@@ -31,6 +31,26 @@ class UserQueries {
         
         return user;
     }
+
+    async findByToken(userToken: string): Promise<User | null> {
+        const user = await User.findOne({
+            where: {
+                userToken: userToken,
+            },
+        });
+
+        return user;
+    }
+
+    async updatePassword(hashedPassword: string, userToken: string): Promise<void> {
+        await User.update({
+            password: hashedPassword,
+        }, {
+            where: {
+                userToken: userToken,
+            },
+        });
+    }
 }
 
 export default new UserQueries();

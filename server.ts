@@ -13,13 +13,19 @@ import MemoryModule from './services/MemoryService';
 
 import dungeonMasterRoutes from './routes/dungeonMaster';
 import userRoutes from './routes/UserRoutes';
+import accountRoutes from './routes/AccountRoutes';
 import socket from './routes/WebSocket';
 import { ErrorHandler, SocketErrorHandler } from './middleware/ErrorHandler';
 import cookieParser from 'cookie-parser';
 import "cookie-parser"
-import socketAuth from './middleware/SocketAuth';
 import fs from 'fs';
+import AuthCheck from './middleware/AuthCheck';
 
+declare module "jsonwebtoken" {
+  export interface JwtPayload {
+    userToken: string;
+  }
+}
 
 
 const app = express();
@@ -46,7 +52,12 @@ app.use(expressjwt(
       return undefined; // if there isn't any token
     },
   }
-  ));
+));
+
+app.use(AuthCheck)
+
+app.use('/account', accountRoutes);
+
 app.use('/dungeon-master', dungeonMasterRoutes);
 app.get('/', (req, res) => {
   res.send('Hello World!');
