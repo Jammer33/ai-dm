@@ -29,4 +29,19 @@ router.post('/login', async (req, res) => {
     return res.json({ message: "Successfully Logged In" });
 });
 
+// forgot password
+router.post('/forgot-password', async (req, res) => {
+    var { email } = req.body;
+    await UserController.forgotPassword(email);
+    return res.json({ message: "Successfully Sent Email" });
+});
+
+// reset password
+router.post('/reset-password', async (req, res) => {
+    var { password, resetToken } = req.body;
+
+    await UserController.resetPasswordWithToken(password, resetToken);
+    return res.json({ message: "Password Changed" });
+});
+
 export default router;

@@ -1,11 +1,17 @@
 import { NewUser, UserLoginRequest } from "../models/General";
 import bcrypt from "bcrypt";
-import { generateUserToken } from "../utils/UserUtils";
+import { generateResetToken, generateUserToken } from "../utils/UserUtils";
 import { BadRequestError, InternalServerError, UnauthorizedError } from "../middleware/ErrorHandler";
 import jwt from "jsonwebtoken";
 import UserQueries from "../queries/UserQueries";
+import AWS from "aws-sdk"
+
+const RESET_TOKEN_TABLE = "dev_reset_token";
+const RESET_TOKEN_EXPIRATION = 60 * 60 * 2; // 2 hours
 
 class UserService {
+    docClient = new AWS.DynamoDB.DocumentClient();
+
     async signupUser(user: NewUser): Promise<string> {
         // generate a random token with full alphabet and numbers not just hex no symbols
         const userToken = generateUserToken();
@@ -57,6 +63,53 @@ class UserService {
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
         await UserQueries.updatePassword(hashedPassword, userToken);
+    }
+
+    async createResetToken(email: string): Promise<string> {
+        const user = await UserQueries.findByEmail(email);
+        if (!user) {
+            throw new BadRequestError("No user found with that email");
+        }
+
+        const resetToken = generateResetToken();
+
+        await this.docClient.put({
+            TableName: RESET_TOKEN_TABLE,
+            Item: {
+                token: resetToken,
+                UserToken: user.userToken,
+                ExpirationTime: Math.floor(Date.now() / 1000) + RESET_TOKEN_EXPIRATION,
+            },
+        },
+            (err) => {
+                if (err) {
+                    console.log("Error", err);
+                }
+            }
+        
+        );
+
+        return resetToken;
+    }
+
+    async resetPasswordWithToken(newPassword: string, resetToken: string): Promise<void> {
+        const params = {
+            TableName: RESET_TOKEN_TABLE,
+            Key: {
+                token: resetToken,
+            },
+        };
+
+        const data = await this.docClient.get(params).promise();
+        if (!data.Item) {
+            throw new BadRequestError("Invalid reset token");
+        }
+
+        await this.docClient.delete(params);
+
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+        await UserQueries.updatePassword(hashedPassword, data.Item.UserToken);
     }
 }
 

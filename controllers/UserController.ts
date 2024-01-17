@@ -2,8 +2,9 @@ import { Jwt } from "jsonwebtoken";
 import { InternalServerError } from "../middleware/ErrorHandler";
 import { NewUser, UserLoginRequest, UserToken } from "../models/General";
 import UserService from "../services/UserService";
+import EmailService from "../services/EmailService";
 
-class DungeonMasterController {
+class UserController {
 
     constructor() {}
 
@@ -27,6 +28,14 @@ class DungeonMasterController {
         return await UserService.resetPassword(oldPassword, newPassword, userToken);
     }
 
+    async resetPasswordWithToken(newPassword: string, resetToken: string): Promise<void> {
+        return await UserService.resetPasswordWithToken(newPassword, resetToken);
+    }
+
+    async forgotPassword(email: string): Promise<void> {
+        const resetToken = await UserService.createResetToken(email);
+        return await EmailService.sendPasswordResetEmail(email, resetToken);
+    }
 }
 
-export default new DungeonMasterController();
+export default new UserController();
