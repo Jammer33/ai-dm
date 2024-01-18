@@ -4,6 +4,12 @@ import cookieParser from 'cookie-parser';
 import { UnauthorizedError } from './ErrorHandler';
 import { Socket } from 'socket.io';
 
+declare module "socket.io" {
+    interface Socket {
+        decoded: any; 
+    }
+}
+
 const socketAuth = (socket: any, next: any) => {
     console.log("socketAuth");
     if (socket.handshake.headers.cookie) {
