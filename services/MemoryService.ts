@@ -19,7 +19,7 @@ class MemoryService {
     this.apiKey = process.env.OPENAI_API_KEY || "";
     this.pinecone = new PineconeClient();
     this.pinecone.init({
-      environment: "northamerica-northeast1-gcp",
+      environment: "gcp-starter", 
       apiKey: process.env.PINECONE_API_KEY || "",
     });
     this.index = process.env.PINECONE_INDEX || "";

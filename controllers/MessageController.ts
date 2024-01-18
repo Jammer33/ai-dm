@@ -16,8 +16,8 @@ class MeessageController {
 
     // stores the messages in a mmoery representation for the given token
     // and then triggers the DM to respond
-    async storeMessageAndActivateDM(sessionToken : string, token: string, message: string, socket: Socket) : Promise<any> {
-        let playerId = await this.findPlayerFromToken(sessionToken);
+    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: Socket) : Promise<any> {
+        let playerId = await this.findPlayerEmailFromToken(authToken);
         if(!playerId) {
             console.log("no player found for session token: " + sessionToken);
             return Promise.resolve();
@@ -31,8 +31,9 @@ class MeessageController {
         if((this.sessionPlayerMessages.get(sessionToken)?.size ?? 0)
             >= this.getNumberOfPlayers(sessionToken)) {
             let formattedUserMessages = this.formatMemoryForDM(sessionToken);
-            const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
-            return response;
+            console.log("formattedUserMessages " + formattedUserMessages);
+            // const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
+            return Promise.resolve();
         }
         
         return Promise.resolve();
@@ -41,13 +42,15 @@ class MeessageController {
     formatMemoryForDM(sessionToken : string) {
         let formattedMemory = "";
         let playerMessages = this.sessionPlayerMessages.get(sessionToken);
+        console.log("playerMessages: " + playerMessages?.size); 
         if(!playerMessages) {
             console.log("no messages for session token: " + sessionToken);
             return "no players for this game";
         }
         
-        for(let playerUsername in playerMessages.keys()) {
-            formattedMemory = "player with id " + playerUsername + " said: " + playerMessages.get(playerUsername) + "\n";
+        for(let playerEmail of playerMessages.keys()) {
+            console.log("playerEmail: " + playerEmail);
+            formattedMemory += "player with id " + playerEmail + " said: " + playerMessages.get(playerEmail) + ", ";
         }
         return formattedMemory;
     }
@@ -56,19 +59,19 @@ class MeessageController {
         return RoomService.findNumberOfPlayersInRoom(sessionToken);
     }
 
-    async findPlayerFromToken(sessionToken: string) : Promise<string | null> {
-        let cachedUsername = this.tokenCache.get(sessionToken);
-        if(cachedUsername) {
-            return Promise.resolve(cachedUsername);
+    async findPlayerEmailFromToken(authToken: string) : Promise<string | null> {
+        let cachedEmail = this.tokenCache.get(authToken);
+        if(cachedEmail) {
+            return Promise.resolve(cachedEmail);
         }
 
-        const storedUser = await UserQueries.findByToken(sessionToken);
+        const storedUser = await UserQueries.findByToken(authToken);
         if(!storedUser) {
             return Promise.resolve(null);
         }
         
-        this.tokenCache.set(sessionToken, storedUser.username);
-        return Promise.resolve(storedUser.username);
+        this.tokenCache.set(authToken, storedUser.email);
+        return Promise.resolve(storedUser.email);
     }
 }
 

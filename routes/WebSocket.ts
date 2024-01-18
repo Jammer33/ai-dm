@@ -7,8 +7,10 @@ import Memory from "../db_models/memories";
 import UserQueries from "../queries/UserQueries";
 
 const socket = (io: Server) => {
-    io.use(SocketErrorHandler);
+    // io.use(SocketErrorHandler);
     io.use(socketAuth);
+
+    console.log("socket.io is listening for connections");
 
     io.on("connection", (socket) => {
         console.log("a user connected");
@@ -20,7 +22,7 @@ const socket = (io: Server) => {
         socket.on("message", (message, sessionToken) => {
             console.log("sessionToken: " + sessionToken);
             // infer the player's identity from the cookie that they are passing in
-            MessageController.storeMessageAndActivateDM(sessionToken, socket.handshake.auth.token, message, socket);
+            MessageController.storeMessageAndActivateDM(sessionToken, socket.decoded["userToken"], message, socket);
         });
 
         socket.on("newGame", (characters, sessionToken) => {
