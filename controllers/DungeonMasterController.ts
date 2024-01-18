@@ -62,23 +62,11 @@ class DungeonMasterController {
         return response;
     }
 
-    async getContext(sessionToken: string) {
-        const [releventMemories, recentMemories, sessionState] = await Promise.all([
-            MemoryService.retrieveRelevant("", 3, sessionToken),
-            MemoryService.retrieveRecent(sessionToken),
-            MemoryService.retrieveSessionState(sessionToken)
-        ]);
-
-        return DungeonMasterService.getFormattedContext(sessionToken, "");
-    }
-
     async getSessionHistory(sessionToken: string) {
         const memories = await MemoryService.retrieveAll(sessionToken);
 
         return memories;
     }
-
-    
 
     formatMemory(userMessage: string, dungeonMasterResponse: string, sessionState?: string) {
         return "[User Input]\n" + userMessage + "\n[DM Response]\n" + dungeonMasterResponse + "\n";

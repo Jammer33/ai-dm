@@ -6,16 +6,16 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 import { config } from 'dotenv';
 import https from 'https';
+import http from 'http';
 (async () => {
   await config({path: '.env'});
 })();
-import MemoryModule from './services/MemoryService';
 
 import dungeonMasterRoutes from './routes/dungeonMaster';
 import userRoutes from './routes/UserRoutes';
 import accountRoutes from './routes/AccountRoutes';
 import socket from './routes/WebSocket';
-import { ErrorHandler, SocketErrorHandler } from './middleware/ErrorHandler';
+import { ErrorHandler } from './middleware/ErrorHandler';
 import cookieParser from 'cookie-parser';
 import "cookie-parser"
 import fs from 'fs';
@@ -38,7 +38,9 @@ app.use(cors({
 }))
 app.use(cookieParser())
 
+// Public User Routes
 app.use('/user', userRoutes);
+
 // Middleware to validate JWT and protect routes
 app.use(expressjwt(
   { 
@@ -58,35 +60,34 @@ app.use(AuthCheck)
 app.use('/account', accountRoutes);
 
 app.use('/dungeon-master', dungeonMasterRoutes);
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
 
-app.post("/memories", async (req, res) => {
-  const { memory, importance, sessionToken } = req.body;
-  await MemoryModule.store(memory, importance, sessionToken);
-  res.sendStatus(201);
-});
+const isDev = process.env.NODE_ENV === 'dev';
 
-app.post("/memories/search", async (req, res) => {
-  const { query, sessionToken } = req.body;
-  const memories = await MemoryModule.retrieveRecent(sessionToken);
-  res.json(memories);
-});
+let server;
 
-const privateKey = fs.readFileSync('keys/server.key', 'utf8');
-const certificate = fs.readFileSync('keys/server.crt', 'utf8');
+if (!isDev) {
+  // In production, let's expect that SSL termination is handled by AWS (ALB, etc.)
+  server = http.createServer(app);
+} else {
+  // In development, use local SSL certificates for testing HTTPS
+  const privateKey = fs.readFileSync('keys/server.key', 'utf8');
+  const certificate = fs.readFileSync('keys/server.crt', 'utf8');
+  const credentials = { key: privateKey, cert: certificate };
 
-const server = https.createServer({ key: privateKey, cert: certificate }, app);
+  server = https.createServer(credentials, app);
+}
 
-const io = new Server(server, {
+const serverConfig = isDev ? {
   cookie: true,
   cors: {
     origin: 'https://localhost:3000',
-    // allow cookies
     credentials: true,
   },
-});
+} : {
+  cookie: true,
+};
+
+const io = new Server(server, serverConfig);
 
 socket(io);
 

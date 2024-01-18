@@ -24,13 +24,7 @@ class MemoryService {
     });
     this.index = process.env.PINECONE_INDEX || "";
 
-    this.s3Client = new S3Client({
-      region: "us-east-2",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-      }
-    });
+    this.s3Client = new S3Client({region: "us-east-2"});
     this.bucketName = process.env.S3_BUCKET_NAME || "ai-dm";
   }
 
