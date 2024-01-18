@@ -92,23 +92,31 @@ class OpenAIService {
             try {
                 const stream = completion.data as any;
                 let finalMessage = "";
+                let unfinishedMessage = "";
                 stream.on('data', (data: any) => {
                     const lines = data.toString().split('\n').filter((line: any) => line.trim() !== '');
                     for (const line of lines) {
                         const str = line.toString();
-                        const jsonStr = str.replace('data: ', '');
+                        let jsonStr = str.replace('data: ', '');
                         if (jsonStr === "[DONE]") {
                             console.log("finalMessage");
                             console.log(finalMessage);
                             resolve(finalMessage);
                             return;
                         }
+                        jsonStr = unfinishedMessage + jsonStr;
 
-                        const json = JSON.parse(jsonStr);
-                        const message = json.choices[0].delta.content;
-                        if (message !== undefined) {
-                            finalMessage += message;
-                            socket.emit("message", message);
+                        let lastChar = jsonStr[jsonStr.length - 1];
+                        if(lastChar == '}') {  
+                            const json = JSON.parse(jsonStr);
+                            const message = json.choices[0].delta.content;
+                            if (message !== undefined) {
+                                finalMessage += message;
+                                socket.emit("message", message);
+                            }
+                            unfinishedMessage = "";
+                        } else {
+                            unfinishedMessage = jsonStr;
                         }
                     }
                 });
@@ -118,6 +126,7 @@ class OpenAIService {
                 });
     
             } catch (error) {
+                console.log(error);
                 reject(error);
             }
         });
