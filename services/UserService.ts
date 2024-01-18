@@ -105,7 +105,11 @@ class UserService {
             throw new BadRequestError("Invalid reset token");
         }
 
-        await this.docClient.delete(params);
+        await this.docClient.delete(params, (err) => {
+            if (err) {
+                console.log("Error deleting reset key", err);
+            }
+        });
 
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
