@@ -1,9 +1,7 @@
 import DungeonMasterController from './DungeonMasterController';
-import MemoryService from '../services/MemoryService';
 import RoomService from '../services/RoomService';
 import { Socket } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
-import User from '../db_models/user';
 
 class MeessageController {
     // memory state mapping that goes from (session token)->(player id, message id)
@@ -31,9 +29,9 @@ class MeessageController {
         if((this.sessionPlayerMessages.get(sessionToken)?.size ?? 0)
             >= this.getNumberOfPlayers(sessionToken)) {
             let formattedUserMessages = this.formatMemoryForDM(sessionToken);
-            console.log("formattedUserMessages " + formattedUserMessages);
-            // const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
-            return Promise.resolve();
+            this.sessionPlayerMessages.delete(sessionToken);
+            const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
+            return Promise.resolve(response);
         }
         
         return Promise.resolve();
@@ -41,15 +39,13 @@ class MeessageController {
 
     formatMemoryForDM(sessionToken : string) {
         let formattedMemory = "";
-        let playerMessages = this.sessionPlayerMessages.get(sessionToken);
-        console.log("playerMessages: " + playerMessages?.size); 
+        let playerMessages = this.sessionPlayerMessages.get(sessionToken); 
         if(!playerMessages) {
             console.log("no messages for session token: " + sessionToken);
             return "no players for this game";
         }
         
         for(let playerEmail of playerMessages.keys()) {
-            console.log("playerEmail: " + playerEmail);
             formattedMemory += "player with id " + playerEmail + " said: " + playerMessages.get(playerEmail) + ", ";
         }
         return formattedMemory;

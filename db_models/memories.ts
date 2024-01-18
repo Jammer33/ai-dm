@@ -9,6 +9,9 @@ class Memory extends Model {
 
     @Column(DataType.STRING)
     sessionToken!: string;
+
+    @Column(DataType.DATE)
+    createDate!: Date;
 }
 
 export default Memory;
