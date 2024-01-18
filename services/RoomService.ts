@@ -11,8 +11,8 @@ class RoomService {
 
     findNumberOfPlayersInRoom(sessionToken : string) {
         // will be used to determine if the DM should be triggered
-        // will be found from the our information stored in the database
-        return 2;
+        // will be found from the our information stored in the database on session initiation
+        return 1;
     }
 }
 
