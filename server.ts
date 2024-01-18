@@ -53,7 +53,8 @@ app.use(expressjwt(
       return undefined; // if there isn't any token
     },
   }
-));
+).unless({path: ['/user/signup', '/user/login', '/user/forgot-password', '/user/reset-password']})
+);
 
 app.use(AuthCheck)
 
