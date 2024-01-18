@@ -19,7 +19,7 @@ class MemoryService {
     this.apiKey = process.env.OPENAI_API_KEY || "";
     this.pinecone = new PineconeClient();
     this.pinecone.init({
-      environment: "northamerica-northeast1-gcp",
+      environment: "gcp-starter", 
       apiKey: process.env.PINECONE_API_KEY || "",
     });
     this.index = process.env.PINECONE_INDEX || "";
@@ -90,6 +90,7 @@ class MemoryService {
       Memory.create({
         s3Id: id,
         sessionToken: sessionToken,
+        createDate: timestamp,
       }),
       await index.upsert({
         upsertRequest: {
@@ -102,7 +103,7 @@ class MemoryService {
 
   async retrieveRelevant(query: string, n = 3, sessionToken: string) {
     const queryEmbedding = await this.getEmbedding(query);
-    console.log("query embedding:", queryEmbedding);
+    // console.log("query embedding:", queryEmbedding);
     const index = this.pinecone.Index(this.index);
     console.log("index:", index);
     const queryResponse = await index.query({
