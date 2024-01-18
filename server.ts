@@ -41,6 +41,12 @@ app.use(cookieParser())
 // Public User Routes
 app.use('/user', userRoutes);
 
+app.get('/health', (req, res) => {
+  // return 200
+  res.sendStatus(200);
+});
+
+
 // Middleware to validate JWT and protect routes
 app.use(expressjwt(
   { 
