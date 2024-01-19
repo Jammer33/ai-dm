@@ -8,7 +8,7 @@ router.post('/signup', async (req, res) => {
     var { username, password, email } = req.body;
     const jwtToken = await UserController.signupUser({username, password, email});
     res.cookie('token', jwtToken, {
-        httpOnly: true,
+        httpOnly: false,
         secure: true, // Ensure you're running your server with HTTPS for this to work
         sameSite: 'lax'
     });
@@ -21,7 +21,7 @@ router.post('/login', async (req, res) => {
     var { email, password } = req.body;
     const jwtToken = await UserController.loginUser({email, password});
     res.cookie('token', jwtToken, {
-        httpOnly: true,
+        httpOnly: false,
         secure: true, // Ensure you're running your server with HTTPS for this to work
         sameSite: 'lax',
         expires: new Date(Date.now() + 60 * 60 * 1000 * 24) // 1 day
