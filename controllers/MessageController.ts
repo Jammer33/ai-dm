@@ -3,7 +3,7 @@ import RoomService from '../services/RoomService';
 import { Socket } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
 
-class MeessageController {
+class MessageController {
     // memory state mapping that goes from (session token)->(player id, message id)
     private sessionPlayerMessages = new Map<string, Map<string, string>>();
     private tokenCache = new Map<string, string>();
@@ -71,4 +71,4 @@ class MeessageController {
     }
 }
 
-export default new MeessageController();
+export default new MessageController();
