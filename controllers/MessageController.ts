@@ -1,6 +1,6 @@
 import DungeonMasterController from './DungeonMasterController';
 import RoomService from '../services/RoomService';
-import { Socket } from 'socket.io';
+import { BroadcastOperator } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
 
 class MessageController {
@@ -14,7 +14,7 @@ class MessageController {
 
     // stores the messages in a mmoery representation for the given token
     // and then triggers the DM to respond
-    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: Socket) : Promise<any> {
+    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
         let playerId = await this.findPlayerEmailFromToken(authToken);
         if(!playerId) {
             console.log("no player found for session token: " + sessionToken);

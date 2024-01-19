@@ -1,6 +1,17 @@
+import Room from '../db_models/GameRoom';
+
 
 // TO BE IMPLEMENTED
 class RoomService {
+    // create a room with the given player id
+    // returns the session token for the room
+    async createRoom(playerId: Number) : Promise<string> {
+        let newRoom = await Room.create({
+            playerId: playerId
+        });
+        return Promise.resolve(newRoom.sessionToken.toString());
+    }
+
     async joinRoom(sessionToken : string) {
 
     }

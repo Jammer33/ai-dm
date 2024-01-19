@@ -1,6 +1,7 @@
 import { AccountStatus } from "../models/General";
 import { Table, Column, Model, DataType } from "sequelize-typescript";
 
+// sequlize implictly adds an id column to the table since we haven't defined a primary key
 @Table
 class User extends Model {
     @Column(DataType.STRING)

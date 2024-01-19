@@ -2,7 +2,7 @@ import OpenAIService, { Message } from '../services/OpenAIService';
 import MemoryService from '../services/MemoryService';
 import { Character } from '../models/Character';
 import DungeonMasterService from '../services/DungeonMasterService';
-import { Socket } from 'socket.io';
+import { BroadcastOperator } from 'socket.io';
 
 class DungeonMasterController {
 
@@ -20,7 +20,7 @@ class DungeonMasterController {
         return response;
     }
 
-    async getDMReplyStreamed(message: string, sessionToken: string, socket: Socket) { 
+    async getDMReplyStreamed(message: string, sessionToken: string, socket: BroadcastOperator<any, any>) { 
         const formattedContext = await DungeonMasterService.getFormattedContext(sessionToken, message);
 
         const response = await OpenAIService.getChatStreamed(formattedContext, socket);
@@ -47,7 +47,7 @@ class DungeonMasterController {
         return response;
     }
 
-    async initStoryStreamed(characters: Character[], sessionToken: string, socket: Socket) {
+    async initStoryStreamed(characters: Character[], sessionToken: string, socket: BroadcastOperator<any, any>) {
         const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character.class).join(", ")
         const initialPrompt = DungeonMasterService.DungeonMasterPrompt + "\n" + charactersString + ".\n" + "Please begin the story by describing the setting and the current situation.";
 
