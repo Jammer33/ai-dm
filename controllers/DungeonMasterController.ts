@@ -68,6 +68,11 @@ class DungeonMasterController {
         return memories;
     }
 
+    async getLastDMInteraction(sessionToken: string) : Promise<string> {
+        const memories = await MemoryService.retrieveRecent(sessionToken);
+        return memories[0].content; 
+    }
+
     formatMemory(userMessage: string, dungeonMasterResponse: string, sessionState?: string) {
         return "[User Input]\n" + userMessage + "\n[DM Response]\n" + dungeonMasterResponse + "\n";
     }

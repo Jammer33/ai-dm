@@ -3,6 +3,7 @@ import User from "./user";
 import SessionState from "./sessionState";
 import Memory from "./memories";
 import Room from "./GameRoom";
+import RoomToPlayer from "./RoomPlayer";
 
 const sequelize = new Sequelize({
     database: process.env.AWS_RDS_DB_NAME,
@@ -17,7 +18,7 @@ const sequelize = new Sequelize({
 
 });
 
-sequelize.addModels([User, SessionState, Memory, Room]);
+sequelize.addModels([User, SessionState, Memory, RoomToPlayer, Room]);
 
 if (process.env.NODE_ENV === 'dev') {
     sequelize.sync({ alter: true });

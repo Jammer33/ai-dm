@@ -15,6 +15,17 @@ class RoomController {
         return sessionToken;
     }
 
+    // @joinRoom joins the room for the sessionToken
+    async joinRoom(userToken: string, sessionToken: string) : Promise<void> {
+        let playerId = await this.findPlayerIdByUserToken(userToken);
+        if(!playerId) {
+            console.log("Could not create a new room for sessionToken ");
+            return;
+        }
+
+        RoomService.joinRoom(playerId, sessionToken);
+    }
+
     async findPlayerIdByUserToken(userToken: string) : Promise<Number> { 
         const storedUser = await UserQueries.findByToken(userToken);
         if(!storedUser) {

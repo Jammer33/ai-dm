@@ -69,6 +69,16 @@ class MessageController {
         this.tokenCache.set(authToken, storedUser.email);
         return Promise.resolve(storedUser.email);
     }
+
+    async getRecentMessages(sessionToken: string) : Promise<Map<String, String>> {
+        const playerMessages = this.sessionPlayerMessages.get(sessionToken);
+        if(!playerMessages) {
+            console.log("no messages from players for session token: " + sessionToken);
+            return Promise.resolve(new Map<string, string>());
+        }
+
+        return playerMessages;
+    }
 }
 
 export default new MessageController();

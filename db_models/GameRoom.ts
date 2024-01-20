@@ -1,4 +1,4 @@
-import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement } from "sequelize-typescript";
+import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Default } from "sequelize-typescript";
 
 @Table
 class Room extends Model {
@@ -7,8 +7,9 @@ class Room extends Model {
     @Column(DataType.INTEGER)
     sessionToken!: Number;
 
+    @Default("")
     @Column(DataType.STRING)
-    playerId!: Number;
+    description!: String;
 }
 
 export default Room;
