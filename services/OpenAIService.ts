@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Method } from '../models/Methods';
 import EventSource from 'eventsource';
 import { ChatCompletionRequestMessage, Configuration, CreateChatCompletionRequest, OpenAIApi } from "openai";
-import { Socket } from 'socket.io';
+import { BroadcastOperator } from 'socket.io';
 import { InternalServerError } from '../middleware/ErrorHandler';
 
 // Endpoints for OpenAI API type
@@ -78,7 +78,7 @@ class OpenAIService {
         
     }
 
-    async callApiStream(data: OpenAIRequest, socket: Socket): Promise<any> {
+    async callApiStream(data: OpenAIRequest, socket: BroadcastOperator<any, any>): Promise<any> {
         const completion = await this.openai.createChatCompletion({
             model: OpenAIModel.GPT4,
             messages: data.messages,
@@ -144,7 +144,7 @@ class OpenAIService {
         return response;
     }
 
-    public async getChatStreamed(messages: ChatCompletionRequestMessage[], socket: Socket) {
+    public async getChatStreamed(messages: ChatCompletionRequestMessage[], socket: BroadcastOperator<any, any>) {
         const data = {
             messages: messages,
             model: this.model,

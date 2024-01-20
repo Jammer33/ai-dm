@@ -1,9 +1,9 @@
 import DungeonMasterController from './DungeonMasterController';
-import RoomService from '../services/RoomService';
-import { Socket } from 'socket.io';
+import { BroadcastOperator } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
+import RoomQueries from '../queries/RoomQueries';
 
-class MeessageController {
+class MessageController {
     // memory state mapping that goes from (session token)->(player id, message id)
     private sessionPlayerMessages = new Map<string, Map<string, string>>();
     private tokenCache = new Map<string, string>();
@@ -14,7 +14,7 @@ class MeessageController {
 
     // stores the messages in a mmoery representation for the given token
     // and then triggers the DM to respond
-    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: Socket) : Promise<any> {
+    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
         let playerId = await this.findPlayerEmailFromToken(authToken);
         if(!playerId) {
             console.log("no player found for session token: " + sessionToken);
@@ -27,7 +27,7 @@ class MeessageController {
         this.sessionPlayerMessages.get(sessionToken)?.set(playerId, message);
 
         if((this.sessionPlayerMessages.get(sessionToken)?.size ?? 0)
-            >= this.getNumberOfPlayers(sessionToken)) {
+            >= (await this.getNumberOfPlayers(sessionToken))) {
             let formattedUserMessages = this.formatMemoryForDM(sessionToken);
             this.sessionPlayerMessages.delete(sessionToken);
             const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
@@ -51,8 +51,8 @@ class MeessageController {
         return formattedMemory;
     }
 
-    getNumberOfPlayers(sessionToken : string) {
-        return RoomService.findNumberOfPlayersInRoom(sessionToken);
+    async getNumberOfPlayers(sessionToken : string) {
+        return await RoomQueries.findNumberOfPlayersInRoom(sessionToken);
     }
 
     async findPlayerEmailFromToken(authToken: string) : Promise<string | null> {
@@ -69,6 +69,16 @@ class MeessageController {
         this.tokenCache.set(authToken, storedUser.email);
         return Promise.resolve(storedUser.email);
     }
+
+    async getRecentMessages(sessionToken: string) : Promise<Map<String, String>> {
+        const playerMessages = this.sessionPlayerMessages.get(sessionToken);
+        if(!playerMessages) {
+            console.log("no messages from players for session token: " + sessionToken);
+            return Promise.resolve(new Map<string, string>());
+        }
+
+        return playerMessages;
+    }
 }
 
-export default new MeessageController();
+export default new MessageController();
