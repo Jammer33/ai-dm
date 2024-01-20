@@ -19,17 +19,32 @@ const socket = (io: Server) => {
 
         socket.on("disconnect", () => {
             console.log("user disconnected");
+            RoomController.leaveRoom(socket.decoded["userToken"]);
         }); 
 
         socket.on("message", (message, sessionToken) => {
             console.log("sessionToken: " + sessionToken);
-            MessageController.storeMessageAndActivateDM(sessionToken, socket.decoded["userToken"], message, io.to(sessionToken));
+            MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
+            .then((playerEmail) => {
+                io.to(sessionToken).emit("message", "player " + playerEmail + " said \n" + message + "\n"); 
+                MessageController.storeMessageAndActivateDM(
+                    sessionToken, socket.decoded["userToken"], 
+                    message, io.to(sessionToken));
+            }).catch((err) => {
+                console.log("Could not find player email: " + err);
+            });
         });
 
         socket.on("joinGame", async (sessionToken) => {
             socket.join(sessionToken);
             RoomController.joinRoom(socket.decoded["userToken"], sessionToken).then(() => {
-                io.to(sessionToken).emit("message", "\na player joined\n");
+                // send a message informing the other participants
+                MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
+                .then((playerEmail) => {
+                    io.to(sessionToken).emit("message", "\nPlayer with email " + playerEmail + " joined\n");
+                }).catch((err) => {
+                    console.log("Could not find player email: " + err);
+                });
             }).catch((err) => {
                 console.log("Could not broadcast joining message" + err);
                 socket.emit("error", "could not join the room");

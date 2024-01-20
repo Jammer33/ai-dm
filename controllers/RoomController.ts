@@ -1,5 +1,5 @@
 import UserQueries from '../queries/UserQueries';
-import RoomService from '../services/RoomService';
+import RoomQueries from '../queries/RoomQueries';
 
 class RoomController {
     // @createRoom creates a new room for the given user with this user token
@@ -11,7 +11,7 @@ class RoomController {
             return "";
         }
 
-        let sessionToken = await RoomService.createRoom(playerId);
+        let sessionToken = await RoomQueries.createRoom(playerId);
         return sessionToken;
     }
 
@@ -23,7 +23,19 @@ class RoomController {
             return;
         }
 
-        RoomService.joinRoom(playerId, sessionToken);
+        RoomQueries.joinRoom(playerId, sessionToken);
+    }
+
+    async leaveRoom(userToken: string) {
+        let playerId = await this.findPlayerIdByUserToken(userToken);
+        if(!playerId) {
+            console.log("Could not create a new room for sessionToken ");
+            return;
+        }
+
+        let sessionToken = await RoomQueries.findPlayerSessionToken(playerId);
+
+        RoomQueries.leaveRoom(playerId, sessionToken ?? "");
     }
 
     async findPlayerIdByUserToken(userToken: string) : Promise<Number> { 

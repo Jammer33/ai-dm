@@ -1,7 +1,7 @@
 import DungeonMasterController from './DungeonMasterController';
-import RoomService from '../services/RoomService';
 import { BroadcastOperator } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
+import RoomQueries from '../queries/RoomQueries';
 
 class MessageController {
     // memory state mapping that goes from (session token)->(player id, message id)
@@ -27,7 +27,7 @@ class MessageController {
         this.sessionPlayerMessages.get(sessionToken)?.set(playerId, message);
 
         if((this.sessionPlayerMessages.get(sessionToken)?.size ?? 0)
-            >= this.getNumberOfPlayers(sessionToken)) {
+            >= (await this.getNumberOfPlayers(sessionToken))) {
             let formattedUserMessages = this.formatMemoryForDM(sessionToken);
             this.sessionPlayerMessages.delete(sessionToken);
             const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
@@ -51,8 +51,8 @@ class MessageController {
         return formattedMemory;
     }
 
-    getNumberOfPlayers(sessionToken : string) {
-        return RoomService.findNumberOfPlayersInRoom(sessionToken);
+    async getNumberOfPlayers(sessionToken : string) {
+        return await RoomQueries.findNumberOfPlayersInRoom(sessionToken);
     }
 
     async findPlayerEmailFromToken(authToken: string) : Promise<string | null> {
