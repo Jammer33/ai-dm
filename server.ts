@@ -98,15 +98,29 @@ if (!isDev) {
   server = https.createServer(credentials, app);
 }
 
-const serverConfig = isDev ? {
-  cookie: true,
-  cors: {
-    origin: 'https://localhost:3000',
-    credentials: true,
-  },
-} : {
-  cookie: true,
-};
+let serverConfig;
+if (isDev) {
+  serverConfig = {
+    cors: {
+      origin: 'https://localhost:3000',
+      credentials: true,
+    },
+  };
+} else if (process.env.NODE_ENV === 'staging') {
+  serverConfig = {
+    cors: {
+      origin: 'https://staging.wizardgm.ai',
+      credentials: true,
+    },
+  };
+} else {
+  serverConfig = {
+    cors: {
+      origin: 'https://wizardgm.ai',
+      credentials: true,
+    },
+  };
+}
 
 const io = new Server(server, serverConfig);
 
