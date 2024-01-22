@@ -32,10 +32,24 @@ const port = process.env.PORT || 3001;
 
 
 app.use(bodyParser.json());
-app.use(cors({
-  origin: 'https://localhost:3000',
-  credentials: true,
-}))
+// allow requests from wizardgm.ai and staging.wizardgm.ai
+if (process.env.NODE_ENV === 'dev') {
+  app.use(cors({
+    origin: 'https://localhost:3000',
+    credentials: true,
+  }))
+} else if (process.env.NODE_ENV === 'staging') {
+  app.use(cors({
+    origin: 'https://staging.wizardgm.ai',
+    credentials: true,
+  }))
+} else {
+  app.use(cors({
+    origin: 'https://wizardgm.ai',
+    credentials: true,
+  }))
+}
+
 app.use(cookieParser())
 
 // Public User Routes
