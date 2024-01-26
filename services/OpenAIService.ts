@@ -112,7 +112,7 @@ class OpenAIService {
                             const message = json.choices[0].delta.content;
                             if (message !== undefined) {
                                 finalMessage += message;
-                                socket.emit("message", message);
+                                socket.emit("DMessage", message);
                             }
                             unfinishedMessage = "";
                         } else {
