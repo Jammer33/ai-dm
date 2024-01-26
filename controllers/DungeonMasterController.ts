@@ -38,7 +38,7 @@ class DungeonMasterController {
 
         const response = await OpenAIService.getChat([{ content: initialPrompt, role: "system" }]);
 
-        MemoryService.store(this.formatMemory(initialPrompt, response), 1, sessionToken);
+        MemoryService.store(this.formatMemory("", response), 1, sessionToken);
 
         const sessionInfo = charactersString + "\n" + response;
 
@@ -53,7 +53,7 @@ class DungeonMasterController {
 
         const response = await OpenAIService.getChatStreamed([{ content: initialPrompt, role: "system" }], socket);
 
-        MemoryService.store(this.formatMemory(initialPrompt, response), 1, sessionToken);
+        MemoryService.store(this.formatMemory("", response), 1, sessionToken);
 
         const sessionInfo = charactersString + "\n" + response;
 
@@ -70,7 +70,7 @@ class DungeonMasterController {
 
     async getLastDMInteraction(sessionToken: string) : Promise<string> {
         const memories = await MemoryService.retrieveRecent(sessionToken);
-        return memories[0].content; 
+        return memories[memories.length-1].content; 
     }
 
     formatMemory(userMessage: string, dungeonMasterResponse: string, sessionState?: string) {
