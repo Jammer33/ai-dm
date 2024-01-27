@@ -8,12 +8,18 @@ import SessionStateQueries from "../queries/SessionStateQueries";
 import SessionState from "../db_models/sessionState";
 
 
+const enum OpenAIModel {
+  ADA_EMBEDDING_SMALL = 'text-embedding-3-small',
+  ADA_EMBEDDING_LARGE = 'text-embedding-3-large',
+}
+
 class MemoryService {
   apiKey: string;
   pinecone: PineconeClient;
   index: string;
   s3Client: S3Client;
   bucketName: string;
+  embeddingModel: string = OpenAIModel.ADA_EMBEDDING_SMALL;
 
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY || "";
@@ -26,6 +32,9 @@ class MemoryService {
 
     this.s3Client = new S3Client({region: "us-east-2"});
     this.bucketName = process.env.S3_BUCKET_NAME || "ai-dm";
+    if (process.env.NODE_ENV !== 'dev') {
+      this.embeddingModel = OpenAIModel.ADA_EMBEDDING_LARGE;
+    }
   }
 
   async getEmbedding(text: string) {
@@ -37,7 +46,7 @@ class MemoryService {
       },
       body: JSON.stringify({
         input: text,
-        model: "text-embedding-ada-002",
+        model: this.embeddingModel,
       }),
     });
 

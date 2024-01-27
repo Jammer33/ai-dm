@@ -22,11 +22,13 @@ const socket = (io: Server) => {
             RoomController.leaveRoom(socket.decoded["userToken"]);
         }); 
 
-        socket.on("message", (message, sessionToken) => {
+        socket.on("reply", (message, sessionToken) => {
             console.log("sessionToken: " + sessionToken);
             MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
             .then((playerEmail) => {
-                io.to(sessionToken).emit("message", "player " + playerEmail + " said \n" + message + "\n"); 
+                let formattedMessage = new Map<String, String> ([
+                    ["player", playerEmail], ["message", message]]);
+                io.to(sessionToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
                 MessageController.storeMessageAndActivateDM(
                     sessionToken, socket.decoded["userToken"], 
                     message, io.to(sessionToken));
@@ -41,7 +43,7 @@ const socket = (io: Server) => {
                 // send a message informing the other participants
                 MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
                 .then((playerEmail) => {
-                    io.to(sessionToken).emit("message", "\nPlayer with email " + playerEmail + " joined\n");
+                    io.to(sessionToken).emit("reply", "\nPlayer with email " + playerEmail + " joined\n");
                 }).catch((err) => {
                     console.log("Could not find player email: " + err);
                 });
