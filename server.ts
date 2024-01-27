@@ -106,17 +106,18 @@ if (isDev) {
       credentials: true,
     },
   };
-} else if (process.env.NODE_ENV === 'staging') {
+} else if (process.env.NODE_ENV == 'staging') {
   serverConfig = {
     cors: {
-      origin: 'https://staging.wizardgm.ai',
+      origin: ['https://wizardgm.ai', 'https://staging.wizardgm.ai'],
+
       credentials: true,
     },
   };
 } else {
   serverConfig = {
     cors: {
-      origin: 'https://wizardgm.ai',
+      origin: ['https://wizardgm.ai', 'https://staging.wizardgm.ai'],
       credentials: true,
     },
   };
