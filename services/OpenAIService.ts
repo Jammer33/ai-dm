@@ -15,7 +15,6 @@ const enum OpenAIModel {
     GPT3 = 'gpt-3.5-turbo-instruct',
     GPT3_16K = 'gpt-3.5-turbo-1106',
     GPT4 = 'gpt-4',
-    ADA_EMBEDDING = 'text-embedding-ada-002',
 }
 
 export interface Message {
@@ -48,8 +47,6 @@ interface OpenAIResponse {
     choices: Choice[];
     usage: Usage;
 }
-
-// 
 
 class OpenAIService {
     openai: OpenAIApi;
