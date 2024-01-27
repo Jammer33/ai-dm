@@ -58,6 +58,10 @@ class OpenAIService {
     constructor() {
         const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
         this.openai = new OpenAIApi(configuration);
+        if (process.env.NODE_ENV !== 'dev') { 
+            console.log("Using GPT4 for completions!");
+            this.model = OpenAIModel.GPT4;
+        }
     }
 
     async callApi(data: CreateChatCompletionRequest) {
