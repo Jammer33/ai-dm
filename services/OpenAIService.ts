@@ -12,8 +12,8 @@ const enum OpenAIEndpoint {
 }
 
 const enum OpenAIModel {
-    GPT3 = 'gpt-3.5-turbo-0613',
-    GPT3_16K = 'gpt-3.5-turbo-16k',
+    GPT3 = 'gpt-3.5-turbo-instruct',
+    GPT3_16K = 'gpt-3.5-turbo-1106',
     GPT4 = 'gpt-4',
     ADA_EMBEDDING = 'text-embedding-ada-002',
 }
@@ -53,7 +53,7 @@ interface OpenAIResponse {
 
 class OpenAIService {
     openai: OpenAIApi;
-    model: OpenAIModel = OpenAIModel.GPT4;
+    model: OpenAIModel = OpenAIModel.GPT3_16K;
 
     constructor() {
         const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
@@ -63,7 +63,7 @@ class OpenAIService {
     async callApi(data: CreateChatCompletionRequest) {
 
         const completion = await this.openai.createChatCompletion({
-            model: OpenAIModel.GPT4,
+            model: this.model,
             messages: data.messages,
             stream: false,
         })
@@ -80,7 +80,7 @@ class OpenAIService {
 
     async callApiStream(data: OpenAIRequest, socket: BroadcastOperator<any, any>): Promise<any> {
         const completion = await this.openai.createChatCompletion({
-            model: OpenAIModel.GPT4,
+            model: this.model,
             messages: data.messages,
             stream: true,
         },
