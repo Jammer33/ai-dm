@@ -12,7 +12,7 @@ router.post('/signup', async (req, res) => {
         secure: true, // Ensure you're running your server with HTTPS for this to work
         sameSite: 'lax',
         expires: new Date(Date.now() + 60 * 60 * 1000 * 24), // 1 day
-        domain: process.env.NODE_ENV === 'dev' ? 'localhost' : '.wizardgm.ai'
+        domain: process.env.NODE_ENV === 'dev' ? 'localhost' : 'wizardgm.ai'
     });
     return res.json({ message: "Successfully Signed Up" });
 });

@@ -98,6 +98,8 @@ if (!isDev) {
   server = https.createServer(credentials, app);
 }
 
+const allowedOrigins = ['https://wizardgm.ai', 'https://staging.wizardgm.ai', 'https://www.wizardgm.ai'];
+
 let serverConfig;
 if (isDev) {
   serverConfig = {
@@ -109,15 +111,20 @@ if (isDev) {
 } else if (process.env.NODE_ENV == 'staging') {
   serverConfig = {
     cors: {
-      origin: ['https://wizardgm.ai', 'https://staging.wizardgm.ai'],
-
+      origin: (origin: any, callback: any) => {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(origin + ' not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
   };
 } else {
   serverConfig = {
     cors: {
-      origin: ['https://wizardgm.ai', 'https://staging.wizardgm.ai'],
+      origin: 'https://www.wizardgm.ai',
       credentials: true,
     },
   };
