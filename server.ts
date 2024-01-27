@@ -105,29 +105,16 @@ if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: (origin: any, callback: any) => {
-        if (['https://localhost:3000'].includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log(origin);
-          callback(new Error(origin + ' not allowed by CORS'));
-        }
-      },
+      origin: "*",
       credentials: true,
     },
   };
 } else if (process.env.NODE_ENV == 'staging') {
   serverConfig = {
     cookie: true,
+    // allow any cors 
     cors: {
-      origin: (origin: any, callback: any) => {
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log(origin);
-          callback(new Error(origin + ' not allowed by CORS'));
-        }
-      },
+      origin: "*",
       credentials: true,
     },
   };
@@ -135,14 +122,7 @@ if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: (origin: any, callback: any) => {
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log(origin);
-          callback(new Error(origin + ' not allowed by CORS'));
-        }
-      },
+      origin: "*",
       credentials: true,
     },
   };
