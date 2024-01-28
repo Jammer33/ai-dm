@@ -30,6 +30,8 @@ declare module "jsonwebtoken" {
 const app = express();
 const port = process.env.PORT || 3001;
 
+const allowedOrigins = ['https://wizardgm.ai', 'https://staging.wizardgm.ai', 'https://www.wizardgm.ai'];
+
 
 app.use(bodyParser.json());
 // allow requests from wizardgm.ai and staging.wizardgm.ai
@@ -40,12 +42,30 @@ if (process.env.NODE_ENV === 'dev') {
   }))
 } else if (process.env.NODE_ENV === 'staging') {
   app.use(cors({
-    origin: 'https://staging.wizardgm.ai',
+    origin: function(origin, callback) {
+      if (origin === undefined) return callback(new Error('origin undefined'));
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(origin);
+        callback(new Error(origin + ' not allowed by CORS'));
+      }
+    },
     credentials: true,
   }))
 } else {
   app.use(cors({
-    origin: 'https://wizardgm.ai',
+    origin: function(origin, callback) {
+      if (origin === undefined) return callback(new Error('origin undefined'));
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(origin);
+        callback(new Error(origin + ' not allowed by CORS'));
+      }
+    },
     credentials: true,
   }))
 }
@@ -98,23 +118,28 @@ if (!isDev) {
   server = https.createServer(credentials, app);
 }
 
-const allowedOrigins = ['https://wizardgm.ai', 'https://staging.wizardgm.ai', 'https://www.wizardgm.ai'];
 
 let serverConfig;
 if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: "*",
+      origin: "https://localhost:3000",
       credentials: true,
     },
   };
 } else if (process.env.NODE_ENV == 'staging') {
   serverConfig = {
     cookie: true,
-    // allow any cors 
     cors: {
-      origin: "*",
+      origin: (origin: any, callback: any) => {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.log(origin);
+          callback(new Error(origin + ' not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
   };
@@ -122,7 +147,14 @@ if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: "*",
+      origin: (origin: any, callback: any) => {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.log(origin);
+          callback(new Error(origin + ' not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
   };
