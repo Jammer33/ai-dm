@@ -42,26 +42,12 @@ if (process.env.NODE_ENV === 'dev') {
   }))
 } else if (process.env.NODE_ENV === 'staging') {
   app.use(cors({
-    origin: function(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log(origin);
-        callback(new Error(origin + ' not allowed by CORS'));
-      }
-    },
+    origin: ["https://localhost:3000", "https://staging.wizardgm.ai"],
     credentials: true,
   }))
 } else {
   app.use(cors({
-    origin: function(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log(origin);
-        callback(new Error(origin + ' not allowed by CORS'));
-      }
-    },
+    origin: 'https://www.wizardgm.ai',
     credentials: true,
   }))
 }
@@ -128,14 +114,7 @@ if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: (origin: any, callback: any) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log(origin);
-          callback(new Error(origin + ' not allowed by CORS'));
-        }
-      },
+      origin: ["https://localhost:3000", "https://staging.wizardgm.ai"],
       credentials: true,
     },
   };
@@ -143,14 +122,7 @@ if (isDev) {
   serverConfig = {
     cookie: true,
     cors: {
-      origin: (origin: any, callback: any) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log(origin);
-          callback(new Error(origin + ' not allowed by CORS'));
-        }
-      },
+      origin: "https://www.wizardgm.ai",
       credentials: true,
     },
   };
