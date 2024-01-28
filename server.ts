@@ -43,9 +43,7 @@ if (process.env.NODE_ENV === 'dev') {
 } else if (process.env.NODE_ENV === 'staging') {
   app.use(cors({
     origin: function(origin, callback) {
-      if (origin === undefined) return callback(new Error('origin undefined'));
-
-      if (allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.log(origin);
@@ -57,9 +55,7 @@ if (process.env.NODE_ENV === 'dev') {
 } else {
   app.use(cors({
     origin: function(origin, callback) {
-      if (origin === undefined) return callback(new Error('origin undefined'));
-
-      if (allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.log(origin);
@@ -133,7 +129,7 @@ if (isDev) {
     cookie: true,
     cors: {
       origin: (origin: any, callback: any) => {
-        if (allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
           console.log(origin);
@@ -148,7 +144,7 @@ if (isDev) {
     cookie: true,
     cors: {
       origin: (origin: any, callback: any) => {
-        if (allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
           console.log(origin);
