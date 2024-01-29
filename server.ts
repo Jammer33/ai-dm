@@ -14,6 +14,7 @@ import http from 'http';
 import dungeonMasterRoutes from './routes/dungeonMaster';
 import userRoutes from './routes/UserRoutes';
 import accountRoutes from './routes/AccountRoutes';
+import roomRoutes from './routes/RoomRoutes';
 import socket from './routes/WebSocket';
 import { ErrorHandler } from './middleware/ErrorHandler';
 import cookieParser from 'cookie-parser';
@@ -81,6 +82,8 @@ app.use(expressjwt(
 app.use(AuthCheck)
 
 app.use('/account', accountRoutes);
+
+app.use('/room', roomRoutes);
 
 app.use('/dungeon-master', dungeonMasterRoutes);
 

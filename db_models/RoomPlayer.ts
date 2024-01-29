@@ -3,7 +3,6 @@ import Room from "./GameRoom";
 
 @Table
 class RoomToPlayer extends Model {
-    @ForeignKey(() => Room)
     @PrimaryKey
     @Column(DataType.INTEGER)
     sessionToken!: Number;

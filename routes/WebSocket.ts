@@ -74,8 +74,8 @@ const socket = (io: Server) => {
             });
         });
 
-        socket.on("newGame", (characters) => {
-            RoomController.createRoom(socket.decoded["userToken"]).then((sessionToken) => { 
+        socket.on("newGame", (characters, name : "", description : "") => {
+            RoomController.createRoom(socket.decoded["userToken"], name, description).then((sessionToken) => { 
                 if(sessionToken == "") {
                     console.log("Could not create a new room");
                     return;

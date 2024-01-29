@@ -10,6 +10,10 @@ class Room extends Model {
     @Default("")
     @Column(DataType.STRING)
     description!: String;
+
+    @Default("")
+    @Column(DataType.STRING)
+    name!: String;
 }
 
 export default Room;

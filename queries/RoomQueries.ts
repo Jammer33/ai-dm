@@ -2,10 +2,10 @@ import Room from '../db_models/GameRoom';
 import RoomToPlayer from '../db_models/RoomPlayer';
 
 class RoomQueries {
-    // create a room with the given player id
-    // returns the session token for the room
-    async createRoom(playerId: Number) : Promise<string> {
+    async createRoom(playerId: Number, name: String, description: String) : Promise<string> {
         let newRoom = await Room.create({
+            name: name,
+            description: description
         });
         RoomToPlayer.create({
             sessionToken: newRoom.sessionToken,
@@ -27,6 +27,18 @@ class RoomQueries {
                 sessionToken: sessionToken,
                 playerId: playerId,
             },
+        });
+    }
+
+    async findRoomsByPlayer(playerId: Number) : Promise<Room[]> {
+        return Room.findAll({
+            include: {
+                model: RoomToPlayer,
+                required: true,
+                where : {
+                    playerId: playerId,
+                },
+            }
         });
     }
 
