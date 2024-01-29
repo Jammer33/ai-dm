@@ -30,6 +30,18 @@ class RoomQueries {
         });
     }
 
+    async findRoomsByPlayer(playerId: Number) : Promise<Room[]> {
+        return Room.findAll({
+            include: {
+                model: RoomToPlayer,
+                required: true,
+                where : {
+                    playerId: playerId,
+                },
+            }
+        });
+    }
+
     async findNumberOfPlayersInRoom(sessionToken : string) {
         return RoomToPlayer.count({
             where: {

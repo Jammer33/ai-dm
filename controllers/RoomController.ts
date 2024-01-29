@@ -1,5 +1,6 @@
 import UserQueries from '../queries/UserQueries';
 import RoomQueries from '../queries/RoomQueries';
+import Room from '../db_models/GameRoom';
 
 class RoomController {
     // @createRoom creates a new room for the given user with this user token
@@ -46,6 +47,16 @@ class RoomController {
         }
 
         return Promise.resolve(storedUser.id);
+    }
+
+    async findPlayersInRoom(userToken: string) : Promise<Room[]> {
+        const storedUser = await UserQueries.findByToken(userToken);
+        if(!storedUser) {
+            console.log("User not found in database");
+            return Promise.resolve([]);
+        }
+
+        return RoomQueries.findRoomsByPlayer(storedUser.id);
     }
 }
 
