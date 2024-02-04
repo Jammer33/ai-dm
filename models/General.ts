@@ -28,3 +28,8 @@ export enum AccountStatus {
     INACTIVE = "INACTIVE",
     DELETED = "DELETED",
 }
+
+export enum RoomState {
+    ACTIVE = "ACTIVE",
+    INACTIVE = "INACTIVE",
+}

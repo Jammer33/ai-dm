@@ -35,6 +35,10 @@ class RoomController {
         }
 
         let sessionToken = await RoomQueries.findPlayerSessionToken(playerId);
+        if(sessionToken === "") {
+            console.log("Player did not join a room.");
+            return;
+        }
 
         RoomQueries.leaveRoom(playerId, sessionToken ?? "");
     }

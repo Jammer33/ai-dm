@@ -1,5 +1,6 @@
 import Room from '../db_models/GameRoom';
 import RoomToPlayer from '../db_models/RoomPlayer';
+import { RoomState } from "../models/General";
 
 class RoomQueries {
     async createRoom(playerId: Number, name: String, description: String) : Promise<string> {
@@ -7,22 +8,23 @@ class RoomQueries {
             name: name,
             description: description
         });
-        RoomToPlayer.create({
-            sessionToken: newRoom.sessionToken,
-            playerId: playerId
-        });
-        return Promise.resolve(newRoom.sessionToken.toString());
+        let sessionTokenString = newRoom.sessionToken.toString();
+        this.joinRoom(playerId, sessionTokenString);
+        return Promise.resolve(sessionTokenString);
     }
 
     async joinRoom(playerId: Number, sessionToken : string) {
         RoomToPlayer.create({
             sessionToken: sessionToken,
-            playerId: playerId
+            playerId: playerId,
+            state: RoomState.ACTIVE,
         });
     }
 
     async leaveRoom(playerId : Number, sessionToken : string) {
-        RoomToPlayer.destroy({
+        RoomToPlayer.update({
+            state: RoomState.INACTIVE,
+        },{
             where: {
                 sessionToken: sessionToken,
                 playerId: playerId,
@@ -42,10 +44,11 @@ class RoomQueries {
         });
     }
 
-    async findNumberOfPlayersInRoom(sessionToken : string) {
+    async findActiveNumberOfPlayersInRoom(sessionToken : string) {
         return RoomToPlayer.count({
             where: {
                 sessionToken: sessionToken,
+                state: RoomState.ACTIVE,
             },
         });
     }

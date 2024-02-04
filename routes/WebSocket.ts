@@ -20,8 +20,13 @@ const socket = (io: Server) => {
         console.log("a user connected");
 
         socket.on("disconnect", () => {
+            if(!socket.decoded) {
+                console.log("user disconnected without a token");
+                return;
+            }
+
             console.log("user disconnected");
-            RoomController.leaveRoom(socket.decoded["userToken"]);
+            RoomController.leaveRoom(socket.decoded["userToken"]); // mark the player as inactive in the room
         }); 
 
         socket.on("reply", (message, sessionToken) => {

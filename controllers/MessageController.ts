@@ -52,7 +52,7 @@ class MessageController {
     }
 
     async getNumberOfPlayers(sessionToken : string) {
-        return await RoomQueries.findNumberOfPlayersInRoom(sessionToken);
+        return await RoomQueries.findActiveNumberOfPlayersInRoom(sessionToken);
     }
 
     async findPlayerEmailFromToken(authToken: string) : Promise<string | null> {
