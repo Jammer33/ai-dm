@@ -15,14 +15,14 @@ router.get('/', async (req : Request, res) => {
     const rooms = await RoomController.findPlayersInRoom(userToken);
     let resData = [];
     for (let i = 0; i < rooms.length; i++) {
-        resData.push({
+        resData.push(JSON.stringify({
             name: rooms[i].name,
             description: rooms[i].description,
             sessionToken: rooms[i].sessionToken,
-        });
+        }));
     }
-    console.log(resData);
-    return res.json(resData);
+
+    return res.json({message: JSON.stringify(resData)});
 });
 
 export default router;
