@@ -5,6 +5,8 @@ import { SocketErrorHandler } from "../middleware/ErrorHandler";
 import socketAuth from "../middleware/SocketAuth";
 import RoomController from "../controllers/RoomController";
 
+const DM_COMPLETION_TOKEN = "[DONE]";
+
 /* we use the user token to identify the user and the session token to identify the game
     we do not want to store the user object on socket.decoded 
     to avoid making queries to the user database on every WS message */
@@ -29,9 +31,12 @@ const socket = (io: Server) => {
                 let formattedMessage = new Map<String, String> ([
                     ["player", playerEmail], ["message", message]]);
                 io.to(sessionToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
-                MessageController.storeMessageAndActivateDM(
-                    sessionToken, socket.decoded["userToken"], 
-                    message, io.to(sessionToken));
+                
+                MessageController.storeMessageAndActivateDM(sessionToken, socket.decoded["userToken"], message, io.to(sessionToken)).then(() => {
+                    io.to(sessionToken).emit("DMessage", DM_COMPLETION_TOKEN);
+                }).catch((err) => {
+                    console.log("Could not store the message: " + err);
+                });
             }).catch((err) => {
                 console.log("Could not find player email: " + err);
             });
@@ -81,7 +86,11 @@ const socket = (io: Server) => {
                     return;
                 }
                 socket.join(sessionToken);
-                DungeonMasterController.initStoryStreamed(characters, sessionToken, io.to(sessionToken));
+                DungeonMasterController.initStoryStreamed(characters, sessionToken, io.to(sessionToken)).then(() => {
+                    io.to(sessionToken).emit("DMessage", DM_COMPLETION_TOKEN);
+                }).catch((err) => {
+                    console.log("Could not start the story: " + err);
+                });
                 socket.emit("newGame", sessionToken);
             }).catch((err) => {
                 console.log(err);
