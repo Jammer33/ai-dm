@@ -5,7 +5,6 @@ import { BroadcastOperator } from 'socket.io';
 import { InternalServerError } from '../middleware/ErrorHandler';
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from 'openai/resources';
-import { Stream } from 'openai/streaming';
 
 
 // Endpoints for OpenAI API type
