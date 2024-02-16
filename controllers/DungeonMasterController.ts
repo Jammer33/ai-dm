@@ -77,6 +77,12 @@ class DungeonMasterController {
         return "[User Input]\n" + userMessage + "\n[DM Response]\n" + dungeonMasterResponse + "\n";
     }
 
+    async requestTTSAudio(message: string, socket: BroadcastOperator<any, any>) {
+        const response = await OpenAIService.getStreamedTTS(message, socket);
+        return response;
+    }
+
+
 }
 
 export default new DungeonMasterController();

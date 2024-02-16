@@ -101,6 +101,14 @@ const socket = (io: Server) => {
                 console.log(err);
             });
         });
+
+        socket.on("tts", (message, sessionToken) => {
+            DungeonMasterController.requestTTSAudio(message, io.to(sessionToken)).then(() => {
+                console.log("TTS request sent");
+            }).catch((err) => {
+                console.log("Could not send TTS request: " + err);
+            });
+        });
     });
 }
 

@@ -1,9 +1,12 @@
 import axios from 'axios';
 import { Method } from '../models/Methods';
 import EventSource from 'eventsource';
-import { ChatCompletionRequestMessage, Configuration, CreateChatCompletionRequest, OpenAIApi } from "openai";
 import { BroadcastOperator } from 'socket.io';
 import { InternalServerError } from '../middleware/ErrorHandler';
+import OpenAI from "openai";
+import { ChatCompletionMessageParam } from 'openai/resources';
+import { Stream } from 'openai/streaming';
+
 
 // Endpoints for OpenAI API type
 const enum OpenAIEndpoint {
@@ -23,7 +26,7 @@ export interface Message {
 }
 // declare data type for OpenAI API
 interface OpenAIRequest {
-    messages: ChatCompletionRequestMessage[];
+    messages: ChatCompletionMessageParam[];
     model: OpenAIModel;
 }
 
@@ -49,28 +52,27 @@ interface OpenAIResponse {
 }
 
 class OpenAIService {
-    openai: OpenAIApi;
+    openai: OpenAI;
     model: OpenAIModel = OpenAIModel.GPT3_16K;
 
     constructor() {
-        const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-        this.openai = new OpenAIApi(configuration);
+        this.openai = new OpenAI();
         if (process.env.NODE_ENV !== 'dev') { 
             console.log("Using GPT4 for completions!");
             this.model = OpenAIModel.GPT4;
         }
     }
 
-    async callApi(data: CreateChatCompletionRequest) {
+    async callApi(data: OpenAIRequest) {
 
-        const completion = await this.openai.createChatCompletion({
+        const completion = await this.openai.chat.completions.create({
             model: this.model,
             messages: data.messages,
             stream: false,
         })
 
         try {
-            return completion.data.choices[0].message!!.content as string;
+            return completion.choices[0].message!!.content as string;
         } catch (error: any) {
             console.log("Error getting response from OpenAI API " + error.data);
             throw new InternalServerError("Error getting response from OpenAI API " + error);
@@ -80,52 +82,28 @@ class OpenAIService {
     }
 
     async callApiStream(data: OpenAIRequest, socket: BroadcastOperator<any, any>): Promise<any> {
-        const completion = await this.openai.createChatCompletion({
+        const completion = await this.openai.chat.completions.create({
             model: this.model,
             messages: data.messages,
             stream: true,
-        },
-        {
-            responseType: 'stream',
         });
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
-                const stream = completion.data as any;
                 let finalMessage = "";
-                let unfinishedMessage = "";
-                stream.on('data', (data: any) => {
-                    const lines = data.toString().split('\n').filter((line: any) => line.trim() !== '');
-                    for (const line of lines) {
-                        const str = line.toString();
-                        let jsonStr = str.replace('data: ', '');
-                        if (jsonStr === "[DONE]") {
-                            console.log("finalMessage");
-                            console.log(finalMessage);
-                            resolve(finalMessage);
-                            return;
-                        }
-                        jsonStr = unfinishedMessage + jsonStr;
-
-                        let lastChar = jsonStr[jsonStr.length - 1];
-                        if(lastChar == '}') {  
-                            const json = JSON.parse(jsonStr);
-                            const message = json.choices[0].delta.content;
-                            if (message !== undefined) {
-                                finalMessage += message;
-                                socket.emit("DMessage", message);
-                            }
-                            unfinishedMessage = "";
-                        } else {
-                            unfinishedMessage = jsonStr;
-                        }
+                for await (const data of completion) {
+                    if (data.choices[0].delta.content == null) {
+                        console.log("finalMessage");
+                        console.log(finalMessage);
+                        socket.emit("DMessage", "[DONE]");
+                        return;
                     }
-                });
-    
-                stream.on('error', (error: any) => {
-                    reject(error);
-                });
-    
+                    const str = data.choices[0].delta.content;
+
+                    finalMessage += str;
+
+                    socket.emit("DMessage", str);
+                };
             } catch (error) {
                 console.log(error);
                 reject(error);
@@ -133,7 +111,61 @@ class OpenAIService {
         });
     }
 
-    public async getChat(messages: ChatCompletionRequestMessage[]) {
+    async getStreamedTTS(text: string, socket: BroadcastOperator<any, any>) {
+        console.log("Getting TTS for:" + text);
+        try {
+            // Regular Response from OpenAI API
+            const audio = await this.openai.audio.speech.create(
+                {
+                    model: "tts-1",
+                    voice: "alloy",
+                    input: text,
+                    response_format: "opus",
+                },
+            );
+
+            // print audio class type
+            console.log(audio.constructor.name);
+
+            const buffer = Buffer.from(await audio.arrayBuffer());
+            
+            socket.emit("tts", buffer);
+
+            // Streamed Response from OpenAI API
+            // const res = await this.openai.audio.speech.create(
+            //     {
+            //         model: "tts-1",
+            //         voice: "alloy",
+            //         input: text,
+            //         response_format: "opus",
+            //     },
+            // );
+
+            // const stream = res.body as unknown as NodeJS.ReadableStream;
+            // let chunkToSend: Uint8Array = new Uint8Array();
+            // stream.on("data", (chunk) => {
+            //     // check chunk type
+            //     console.log(chunk.constructor.name);
+            //     console.log("chunk");
+                
+            //     console.log(chunkToSend.byteLength);
+            //     chunkToSend = Buffer.concat([chunkToSend, chunk]);
+            //     if (chunkToSend.byteLength > 40000) {
+            //         socket.emit("tts", chunkToSend);
+            //         chunkToSend = Buffer.from("");
+            //     }
+            // });
+        } catch (error) {
+            console.log("Error getting TTS from OpenAI API " + error);
+            throw new InternalServerError("Error getting TTS from OpenAI API " + error);
+        }
+
+        
+    }
+        
+
+
+    public async getChat(messages: ChatCompletionMessageParam[]) {
         const endpoint = OpenAIEndpoint.CHAT;
         const method = Method.POST;
         const data = {
@@ -145,7 +177,7 @@ class OpenAIService {
         return response;
     }
 
-    public async getChatStreamed(messages: ChatCompletionRequestMessage[], socket: BroadcastOperator<any, any>) {
+    public async getChatStreamed(messages: ChatCompletionMessageParam[], socket: BroadcastOperator<any, any>) {
         const data = {
             messages: messages,
             model: this.model,

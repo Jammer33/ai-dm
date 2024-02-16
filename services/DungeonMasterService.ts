@@ -1,4 +1,4 @@
-import { ChatCompletionRequestMessage } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 import DungeonMasterController from "../controllers/DungeonMasterController";
 import MemoryService from "./MemoryService";
 import OpenAIService, { Message } from "./OpenAIService";
@@ -58,12 +58,12 @@ class DungeonMasterService {
         relevantMemories: { content: string }[],
         message: string,
         state: string
-        ): ChatCompletionRequestMessage[] {
+        ): ChatCompletionMessageParam[] {
         const sessionState: string = "[Session State (this is the current state of the campaign)]\n" + state;
         const recentMemoryContext: string = "[Conversation History (this is the most recent conversation from the campaign)]\n" + recentMemories.reverse().map((memory) => memory.content).join(" ");
         const relevantMemoryContext: string = "[Story History (these are old tidbits from the campaign that might be relevant to what is going on now. Not recent.)]\n" + relevantMemories.reverse().map((memory) => memory.content).join(" ");
         const userInput: string = "[User Input]\n" + message;
-        const messages: ChatCompletionRequestMessage[] = [
+        const messages: ChatCompletionMessageParam[] = [
             { content: this.DungeonMasterPrompt, role: "system" },
             { content: sessionState, role: "system" },
             { content: relevantMemoryContext, role: "assistant" },
