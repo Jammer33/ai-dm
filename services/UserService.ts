@@ -30,6 +30,26 @@ class UserService {
         return await jwtoken;
     }
 
+    async verifyUser(token: string): Promise<string> {
+        // retrieve the user from the database
+        const payload = jwt.verify( token, process.env.SECRET_KEY!! )
+        console.log(payload);
+        console.log(typeof payload);
+        let email: string =  '';
+
+        if (typeof payload != 'string' && !payload.userToken) {
+            const storedUser = await UserQueries.findByToken(payload.userToken);
+            console.log("|||")
+            console.log(storedUser);
+            if (!storedUser) {
+                throw new BadRequestError("No user found with that token");
+            }
+            email = storedUser.email;
+        }
+
+        return email;
+    }
+
     async loginUser(user: UserLoginRequest): Promise<string> {
         // retrieve the user from the database
         const storedUser = await UserQueries.findByEmail(user.email);
