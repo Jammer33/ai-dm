@@ -53,7 +53,9 @@ const socket = (io: Server) => {
                 // send a message informing the other participants
                 MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
                 .then((playerEmail) => {
-                    io.to(sessionToken).emit("reply", "\nPlayer with email " + playerEmail + " joined\n");
+                    let formattedMessage = new Map<String, String> ([
+                        ["player", playerEmail ?? ""], ["message", "Joined"]]);
+                    io.to(sessionToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
                 }).catch((err) => {
                     console.log("Could not find player email: " + err);
                 });
