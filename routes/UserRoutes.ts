@@ -17,6 +17,17 @@ router.post('/signup', async (req, res) => {
     return res.json({ message: "Successfully Signed Up" });
 });
 
+// verify user
+router.get('/verify', async (req, res) => {
+    if (!(req.cookies && req.cookies.token)) {
+        res.status(400);
+        return res.json({ message: "Verification Failed"});
+    }
+    const email = await UserController.verifyUser(req.cookies.token);
+
+    return res.json({ message: "Successfully Verified", email: email });
+});
+
 // login user
 router.post('/login', async (req, res) => {
     console.log(req.cookies);

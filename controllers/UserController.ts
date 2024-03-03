@@ -16,6 +16,14 @@ class UserController {
         return jwtToken;
     }
 
+    async verifyUser(token: string): Promise<string> {
+        const email = await UserService.verifyUser(token);
+        if (!email) {
+            throw new InternalServerError("Error verifying user");
+        }
+        return email;
+    }
+
     async loginUser(user: UserLoginRequest): Promise<string> {
         const jwtToken = await UserService.loginUser(user);
         if (!jwtToken) {
