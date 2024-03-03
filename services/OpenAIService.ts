@@ -110,7 +110,7 @@ class OpenAIService {
         });
     }
 
-    async getStreamedTTS(text: string, socket: BroadcastOperator<any, any>) {
+    async getStreamedTTS(text: string, socket: BroadcastOperator<any, any>, playbackSpeed: number) {
         console.log("Getting TTS for:" + text);
         try {
             // Regular Response from OpenAI API
@@ -120,6 +120,7 @@ class OpenAIService {
                     voice: "alloy",
                     input: text,
                     response_format: "opus",
+                    speed: playbackSpeed,
                 },
             );
 
