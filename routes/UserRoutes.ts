@@ -23,7 +23,6 @@ router.get('/verify', async (req, res) => {
         res.status(400);
         return res.json({ message: "Verification Failed"});
     }
-    // console.log(req.cookies.token);
     const email = await UserController.verifyUser(req.cookies.token);
 
     return res.json({ message: "Successfully Verified", email: email });

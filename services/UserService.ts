@@ -32,12 +32,12 @@ class UserService {
 
     async verifyUser(token: string): Promise<string> {
         // retrieve the user from the database
-        const payload = jwt.verify( token, process.env.SECRET_KEY!! )
+        const payload = jwt.verify( token, process.env.SECRET_KEY!! ) as any;
         console.log(payload);
         console.log(typeof payload);
         let email: string =  '';
 
-        if (typeof payload != 'string' && !payload.userToken) {
+        if (payload.userToken) {
             const storedUser = await UserQueries.findByToken(payload.userToken);
             console.log("|||")
             console.log(storedUser);
