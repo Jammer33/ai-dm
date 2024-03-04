@@ -27,16 +27,10 @@ class RoomController {
         RoomQueries.joinRoom(playerId, sessionToken);
     }
 
-    async leaveRoom(userToken: string) {
+    async leaveRoom(userToken: string, sessionToken: string) {
         let playerId = await this.findPlayerIdByUserToken(userToken);
         if(!playerId) {
             console.log("Could not create a new room for sessionToken ");
-            return;
-        }
-
-        let sessionToken = await RoomQueries.findPlayerSessionToken(playerId);
-        if(sessionToken === "") {
-            console.log("Player did not join a room.");
             return;
         }
 

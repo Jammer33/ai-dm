@@ -17,7 +17,7 @@ const socket = (io: Server) => {
     console.log("socket.io is listening for connections");
 
     io.on("connection", (socket) => {
-        console.log("a user connected");
+        let cachedSessionToken = ""; // keep track of the session token for this socket
 
         socket.on("disconnect", () => {
             if(!socket.decoded) {
@@ -25,8 +25,8 @@ const socket = (io: Server) => {
                 return;
             }
 
-            console.log("user disconnected");
-            RoomController.leaveRoom(socket.decoded["userToken"]); // mark the player as inactive in the room
+            console.log("cached session token " + cachedSessionToken);
+            RoomController.leaveRoom(socket.decoded["userToken"], cachedSessionToken); // mark the player as inactive in the room
         }); 
 
         socket.on("reply", (message, sessionToken) => {
@@ -48,6 +48,7 @@ const socket = (io: Server) => {
         });
 
         socket.on("joinGame", async (sessionToken) => {
+            cachedSessionToken = sessionToken;
             socket.join(sessionToken);
             RoomController.joinRoom(socket.decoded["userToken"], sessionToken).then(() => {
                 // send a message informing the other participants
@@ -92,6 +93,7 @@ const socket = (io: Server) => {
                     console.log("Could not create a new room");
                     return;
                 }
+                cachedSessionToken = sessionToken;
                 socket.join(sessionToken);
                 DungeonMasterController.initStoryStreamed(characters, sessionToken, io.to(sessionToken)).then(() => {
                     io.to(sessionToken).emit("DMessage", DM_COMPLETION_TOKEN);
