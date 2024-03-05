@@ -12,17 +12,34 @@ router.get('/', async (req : Request, res) => {
     }
     console.log(userToken);
 
-    const rooms = await RoomController.findPlayersInRoom(userToken);
+    const rooms = await RoomController.findPlayerRooms(userToken);
     let resData = [];
     for (let i = 0; i < rooms.length; i++) {
         resData.push(JSON.stringify({
             name: rooms[i].name,
             description: rooms[i].description,
-            sessionToken: rooms[i].sessionToken,
+            campaignToken: rooms[i].campaignToken,
+            isOwner: rooms[i].ownerToken === userToken,
         }));
     }
 
     return res.json({message: JSON.stringify(resData)});
+});
+
+// delete a room
+router.delete('/:campaignToken', async (req : Request, res) => {
+    let userToken = req.auth?.userToken;
+    let campaignToken = req.params.campaignToken;
+    if (!userToken || !campaignToken) {
+        return res.json({message: "could not delete the room"});
+    }
+
+    RoomController.deleteRoom(userToken, campaignToken).then(() => {
+        return res.json({message: "room deleted"});
+    }).catch((err) => {
+        console.log("Could not delete the room: " + err);
+        return res.json({message: "could not delete the room"});
+    });
 });
 
 export default router;

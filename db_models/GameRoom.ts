@@ -2,18 +2,31 @@ import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Default } fr
 
 @Table
 class Room extends Model {
-    @PrimaryKey
     @AutoIncrement
     @Column(DataType.INTEGER)
-    sessionToken!: Number;
+    campaignId!: Number;
+
+    @PrimaryKey
+    @Column(DataType.STRING)
+    campaignToken!: string;
+
+    @Column(DataType.STRING)
+    ownerToken!: string;
 
     @Default("")
     @Column(DataType.STRING)
-    description!: String;
+    description!: string;
 
     @Default("")
     @Column(DataType.STRING)
-    name!: String;
+    name!: string;
+
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    deleted!: Boolean;
+
+    @Column(DataType.DATE)
+    deletedAt?: Date;
 }
 
 export default Room;

@@ -20,7 +20,7 @@ const sequelize = new Sequelize({
 
 sequelize.addModels([User, SessionState, Memory, RoomToPlayer, Room]);
 Room.hasMany(RoomToPlayer, {
-    foreignKey: 'sessionToken',
+    foreignKey: 'campaignToken',
 });
 
 if (process.env.NODE_ENV === 'dev') {

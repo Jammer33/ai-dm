@@ -51,6 +51,17 @@ class UserQueries {
             },
         });
     }
+
+    // return true if user exists
+    async doesUserExist(userToken: string): Promise<boolean> {
+        const user = await User.findOne({
+            where: {
+                userToken: userToken,
+            },
+        });
+
+        return user !== null;
+    }
 }
 
 export default new UserQueries();

@@ -1,13 +1,13 @@
 import { Server } from "socket.io";
 import DungeonMasterController from "../controllers/DungeonMasterController";
 import MessageController from "../controllers/MessageController";
-import { SocketErrorHandler } from "../middleware/ErrorHandler";
 import socketAuth from "../middleware/SocketAuth";
 import RoomController from "../controllers/RoomController";
+import RoomQueries from "../queries/RoomQueries";
 
 const DM_COMPLETION_TOKEN = "[DONE]";
 
-/* we use the user token to identify the user and the session token to identify the game
+/* we use the user token to identify the user and the  campaignToken to identify the game
     we do not want to store the user object on socket.decoded 
     to avoid making queries to the user database on every WS message */
 const socket = (io: Server) => {
@@ -29,16 +29,16 @@ const socket = (io: Server) => {
             RoomController.leaveRoom(socket.decoded["userToken"], cachedSessionToken); // mark the player as inactive in the room
         }); 
 
-        socket.on("reply", (message, sessionToken) => {
-            console.log("sessionToken: " + sessionToken);
+        socket.on("reply", (message, campaignToken) => {
+            console.log("campaignToken: " + campaignToken);
             MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
             .then((playerEmail) => {
                 let formattedMessage = new Map<String, String> ([
                     ["player", playerEmail], ["message", message]]);
-                io.to(sessionToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
+                io.to(campaignToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
                 
-                MessageController.storeMessageAndActivateDM(sessionToken, socket.decoded["userToken"], message, io.to(sessionToken)).then(() => {
-                    io.to(sessionToken).emit("DMessage", DM_COMPLETION_TOKEN);
+                MessageController.storeMessageAndActivateDM(campaignToken, socket.decoded["userToken"], message, io.to(campaignToken)).then(() => {
+                    io.to(campaignToken).emit("DMessage", DM_COMPLETION_TOKEN);
                 }).catch((err) => {
                     console.log("Could not store the message: " + err);
                 });
@@ -47,31 +47,36 @@ const socket = (io: Server) => {
             });
         });
 
-        socket.on("joinGame", async (sessionToken) => {
-            cachedSessionToken = sessionToken;
-            socket.join(sessionToken);
-            RoomController.joinRoom(socket.decoded["userToken"], sessionToken).then(() => {
-                // send a message informing the other participants
-                MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
-                .then((playerEmail) => {
-                    let formattedMessage = new Map<String, String> ([
-                        ["player", playerEmail ?? ""], ["message", "Joined"]]);
-                    io.to(sessionToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
+        socket.on("joinGame", async (campaignToken) => {
+            cachedSessionToken = campaignToken;
+            socket.join(campaignToken);
+            // check if the user is already in the room
+            if (await RoomQueries.isPlayerInRoom(socket.decoded["userToken"], campaignToken)) {
+                console.log("user already in this campaign. Just adding to socket room.");
+            } else {
+                RoomController.joinRoom(socket.decoded["userToken"], campaignToken).then(() => {
+                    // send a message informing the other participants
+                    MessageController.findPlayerEmailFromToken(socket.decoded["userToken"])
+                    .then((playerEmail) => {
+                        let formattedMessage = new Map<String, String> ([
+                            ["player", playerEmail ?? ""], ["message", "Joined"]]);
+                        io.to(campaignToken).emit("reply", JSON.stringify(Array.from(formattedMessage))); 
+                    }).catch((err) => {
+                        console.log("Could not find player email: " + err);
+                    });
                 }).catch((err) => {
-                    console.log("Could not find player email: " + err);
+                    console.log("Could not broadcast joining message" + err);
+                    socket.emit("error", "could not join the room");
+                    return;
                 });
-            }).catch((err) => {
-                console.log("Could not broadcast joining message" + err);
-                socket.emit("error", "could not join the room");
-                return;
-            });
+            }
 
             // get the last interaction from the DM and recent player messages to pass to the client
-            DungeonMasterController.getLastDMInteraction(sessionToken).then((DMResponse) => {
+            DungeonMasterController.getLastDMInteraction(campaignToken).then((DMResponse) => {
                 // overcomes a bug in the default JS map object with JSON serialization
                 let prevMessages = new Map<String, String>(); 
 
-                MessageController.getRecentMessages(sessionToken).then((messages : Map<String, String>) => {
+                MessageController.getRecentMessages(campaignToken).then((messages : Map<String, String>) => {
                     for(let key of messages.keys()) {
                         prevMessages.set(key, messages.get(key) ?? "");
                     }
@@ -88,26 +93,26 @@ const socket = (io: Server) => {
         });
 
         socket.on("newGame", (characters, name : "", description : "") => {
-            RoomController.createRoom(socket.decoded["userToken"], name, description).then((sessionToken) => { 
-                if(sessionToken == "") {
+            RoomController.createRoom(socket.decoded["userToken"], name, description).then((campaignToken) => { 
+                if(campaignToken == "") {
                     console.log("Could not create a new room");
                     return;
                 }
-                cachedSessionToken = sessionToken;
-                socket.join(sessionToken);
-                DungeonMasterController.initStoryStreamed(characters, sessionToken, io.to(sessionToken)).then(() => {
-                    io.to(sessionToken).emit("DMessage", DM_COMPLETION_TOKEN);
+                cachedSessionToken = campaignToken;
+                socket.join(campaignToken);
+                DungeonMasterController.initStoryStreamed(characters, campaignToken, io.to(campaignToken)).then(() => {
+                    io.to(campaignToken).emit("DMessage", DM_COMPLETION_TOKEN);
                 }).catch((err) => {
                     console.log("Could not start the story: " + err);
                 });
-                socket.emit("newGame", sessionToken);
+                socket.emit("newGame", campaignToken);
             }).catch((err) => {
                 console.log(err);
             });
         });
 
-        socket.on("tts", (message, sessionToken, playbackSpeed) => {
-            DungeonMasterController.requestTTSAudio(message, io.to(sessionToken), playbackSpeed).then(() => {
+        socket.on("tts", (message, campaignToken, playbackSpeed) => {
+            DungeonMasterController.requestTTSAudio(message, io.to(campaignToken), playbackSpeed).then(() => {
                 console.log("TTS request sent");
             }).catch((err) => {
                 console.log("Could not send TTS request: " + err);

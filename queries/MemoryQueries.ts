@@ -3,10 +3,10 @@ import Memory from "../db_models/memories";
 class MemoryQueries {
     constructor() {}
 
-    async findRecentMemoriesBySessionToken(sessionToken: string, count: number = 3): Promise<Memory[]> {
+    async findRecentMemoriesByCampaignToken(campaignToken: string, count: number = 3): Promise<Memory[]> {
         const memories = await Memory.findAll({
             where: {
-                sessionToken: sessionToken,
+                campaignToken: campaignToken,
             },
             limit: count,
             order: [["createDate", "DESC"]],
@@ -15,10 +15,10 @@ class MemoryQueries {
         return memories;
     }
 
-    async findAllMemoriesBySessionToken(sessionToken: string): Promise<Memory[]> {
+    async findAllMemoriesByCampaignToken(campaignToken: string): Promise<Memory[]> {
         const memories = await Memory.findAll({
             where: {
-                sessionToken: sessionToken,
+                campaignToken: campaignToken,
             },
             order: [["createDate", "DESC"]],
         });

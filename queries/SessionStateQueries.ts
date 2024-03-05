@@ -3,14 +3,14 @@ import SessionState from "../db_models/sessionState";
 class SessionStateQueries {
     constructor() {}
 
-    async findSessionStateBySessionToken(sessionToken: string): Promise<SessionState | null> {
-        const sessionState = await SessionState.findOne({
+    async findCampaignStateByCampaignToken(campaignToken: string): Promise<SessionState | null> {
+        const campaignState = await SessionState.findOne({
             where: {
-                sessionToken: sessionToken,
+                campaignToken: campaignToken,
             },
         });
 
-        return sessionState;
+        return campaignState;
     }
 }
 

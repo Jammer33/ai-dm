@@ -95,6 +95,7 @@ class OpenAIService {
                         console.log("finalMessage");
                         console.log(finalMessage);
                         socket.emit("DMessage", "[DONE]");
+                        resolve(finalMessage);
                         return;
                     }
                     const str = data.choices[0].delta.content;

@@ -13,8 +13,8 @@ class DungeonMasterService {
 
     constructor() {}
 
-    async updateState(newStory: string, sessionToken: string) {
-        var oldState = await MemoryService.retrieveSessionState(sessionToken);
+    async updateState(newStory: string, campaignToken: string) {
+        var oldState = await MemoryService.retrieveSessionState(campaignToken);
         var newState = await OpenAIService.getChat(
             [
                 { content: this.firstPrompt, role: "system" },
@@ -24,14 +24,14 @@ class DungeonMasterService {
                 { content: this.thirdPrompt, role: "system" },
             ]
         );
-        await MemoryService.storeSessionState(sessionToken, newState);
+        await MemoryService.storeSessionState(campaignToken, newState);
         return newState;
     }
 
     private firstNewStatePrompt = "The following is the beginning of a new Dungeons & Dragons campaign."
     private secondNewStatePrompt = "It is your job to start the CAMPAIGN NOTES of the campaign using the dialogue provided. Please include important information about the player characters, quests, locations, items, NPCs etc. Ensure you keep track of what NPCs are present at all times. Also keep track of the current time of day, weather, and current location of the characters. Also please begin a campaign timeline that will track what has transpired during the campaign. You have full creative control on what is stored here but remember that the Dungeon Master will rely on what you put here to keep track of the story and gameplay so ensure it is comprehensive and high quality. \n Please provide the campaign notes below. Starting with \"CAMPAIGN NOTES\"..."
 
-    async createNewState(newStory: string, sessionToken: string) {
+    async createNewState(newStory: string, campaignToken: string) {
         var newState = await OpenAIService.getChat(
             [
                 { content: this.firstNewStatePrompt, role: "system" },
@@ -39,15 +39,15 @@ class DungeonMasterService {
                 { content: this.secondNewStatePrompt, role: "system" },
             ]
         );
-        await MemoryService.storeSessionState(sessionToken, newState);
+        await MemoryService.storeSessionState(campaignToken, newState);
         return newState;
     }
 
-    async getFormattedContext(sessionToken: string, message: string) {
+    async getFormattedContext(campaignToken: string, message: string) {
         const [releventMemories, recentMemories, sessionState] = await Promise.all([
-            MemoryService.retrieveRelevant(message, 3, sessionToken),
-            MemoryService.retrieveRecent(sessionToken),
-            MemoryService.retrieveSessionState(sessionToken)
+            MemoryService.retrieveRelevant(message, 3, campaignToken),
+            MemoryService.retrieveRecent(campaignToken),
+            MemoryService.retrieveSessionState(campaignToken)
         ]);
 
         return this.formatMessages(recentMemories, releventMemories, message, sessionState);

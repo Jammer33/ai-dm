@@ -5,8 +5,8 @@ const router = express.Router();
 
 // Get entire session history
 router.get('/story/history', async (req, res) => {
-  var { sessionToken } = req.body;
-  Promise.resolve(DungeonMasterController.getSessionHistory(sessionToken)).then((data) => {
+  var { campaignToken } = req.body;
+  Promise.resolve(DungeonMasterController.getSessionHistory(campaignToken)).then((data) => {
     return res.json({ message: data });
   });
 });

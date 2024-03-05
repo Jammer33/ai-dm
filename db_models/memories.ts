@@ -8,7 +8,7 @@ class Memory extends Model {
     s3Id!: string;
 
     @Column(DataType.STRING)
-    sessionToken!: string;
+    campaignToken!: string;
 
     @Column(DataType.DATE)
     createDate!: Date;

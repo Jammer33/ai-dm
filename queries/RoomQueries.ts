@@ -1,66 +1,112 @@
 import Room from '../db_models/GameRoom';
 import RoomToPlayer from '../db_models/RoomPlayer';
 import { RoomState } from "../models/General";
+import { generateCampaignToken } from '../utils/UserUtils';
 
 class RoomQueries {
-    async createRoom(playerId: Number, name: String, description: String) : Promise<string> {
+    async createRoom(playerToken: string, name: string, description: string) : Promise<string> {
+        let campaignToken = generateCampaignToken()
+
+        while (await this.doesRoomExist(campaignToken)) {
+            campaignToken = generateCampaignToken();
+        }
+
         let newRoom = await Room.create({
             name: name,
-            description: description
+            description: description,
+            ownerToken: playerToken,
+            campaignToken: campaignToken,
         });
-        let sessionTokenString = newRoom.sessionToken.toString();
-        this.joinRoom(playerId, sessionTokenString);
-        return Promise.resolve(sessionTokenString);
+        console.log(name, description, newRoom.campaignToken);
+        this.joinRoom(playerToken, newRoom.campaignToken);
+        return Promise.resolve(newRoom.campaignToken);
     }
 
-    async joinRoom(playerId: Number, sessionToken : string) {
+    async joinRoom(playerToken: string, campaignToken : string) {
         RoomToPlayer.create({
-            sessionToken: sessionToken,
-            playerId: playerId,
+            campaignToken: campaignToken,
+            playerToken: playerToken,
             state: RoomState.ACTIVE,
         });
     }
 
-    async leaveRoom(playerId : Number, sessionToken : string) {
+    async leaveRoom(playerToken : string, campaignToken : string) {
         RoomToPlayer.update({
             state: RoomState.INACTIVE,
         },{
             where: {
-                sessionToken: sessionToken,
-                playerId: playerId,
+                campaignToken: campaignToken,
+                playerToken: playerToken,
             },
         });
     }
 
-    async findRoomsByPlayer(playerId: Number) : Promise<Room[]> {
+    async findRoomsByPlayer(playerToken: string) : Promise<Room[]> {
+        console.log("Finding rooms for player: ", playerToken);
         return Room.findAll({
             include: {
                 model: RoomToPlayer,
                 required: true,
                 where : {
-                    playerId: playerId,
+                    playerToken: playerToken,
                 },
-            }
+            },
+            where: {
+                deleted: false,
+            },
         });
     }
 
-    async findActiveNumberOfPlayersInRoom(sessionToken : string) {
+    async findActiveNumberOfPlayersInRoom(campaignToken : string) {
         return RoomToPlayer.count({
             where: {
-                sessionToken: sessionToken,
+                campaignToken: campaignToken,
                 state: RoomState.ACTIVE,
             },
         });
     }
 
-    async findPlayerSessionToken(playerId: Number) {
+    async findPlayerCampaignToken(playerToken: string) {
         let roomToPlayer = await RoomToPlayer.findOne({
             where: {
-                playerId: playerId,
+                playerToken: playerToken,
             },
         });
-        return Promise.resolve(roomToPlayer?.sessionToken.toString() ?? "");
+        return Promise.resolve(roomToPlayer?.campaignToken.toString() ?? "");
     }
+
+    async deleteRoom(playerToken: string, campaignToken: string) {
+        return Room.update({
+            deleted: true,
+        },{
+            where: {
+                campaignToken: campaignToken,
+                ownerToken: playerToken,
+            },
+        });
+    }
+
+    async doesRoomExist(campaignToken: string) {
+        let room = await Room.findOne({
+            where: {
+                campaignToken: campaignToken,
+            },
+        });
+
+        return room !== null;
+    }
+
+    async isPlayerInRoom(playerToken: string, campaignToken: string) {
+        let roomToPlayer = await RoomToPlayer.findOne({
+            where: {
+                campaignToken: campaignToken,
+                playerToken: playerToken,
+            },
+        });
+
+        return roomToPlayer !== null;
+    }
+
 }
 
 export default new RoomQueries();

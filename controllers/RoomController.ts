@@ -1,60 +1,44 @@
 import UserQueries from '../queries/UserQueries';
 import RoomQueries from '../queries/RoomQueries';
 import Room from '../db_models/GameRoom';
+import { UnauthorizedError } from '../middleware/ErrorHandler';
 
 class RoomController {
     // @createRoom creates a new room for the given user with this user token
-    // returns a promise with the new session token
+    // returns a promise with the new campaignToken
     async createRoom(userToken: string, name: string, description: string) : Promise<string> {
-        let playerId = await this.findPlayerIdByUserToken(userToken);
-        if(!playerId) {
-            console.log("Could not create a new room for sessionToken ");
-            return "";
-        }
-
-        let sessionToken = await RoomQueries.createRoom(playerId, name, description);
-        return sessionToken;
+        let campaignToken = await RoomQueries.createRoom(userToken, name, description);
+        return campaignToken;
     }
 
-    // @joinRoom joins the room for the sessionToken
-    async joinRoom(userToken: string, sessionToken: string) : Promise<void> {
-        let playerId = await this.findPlayerIdByUserToken(userToken);
-        if(!playerId) {
-            console.log("Could not create a new room for sessionToken ");
+    // @joinRoom joins the room for the campaignToken
+    async joinRoom(userToken: string, campaignToken: string) : Promise<void> {
+        RoomQueries.joinRoom(userToken, campaignToken);
+    }
+
+    async leaveRoom(userToken: string, campaignToken: string) {
+        RoomQueries.leaveRoom(userToken, campaignToken ?? "");
+    }
+
+    async findPlayerRooms(userToken: string) : Promise<Room[]> {
+        return RoomQueries.findRoomsByPlayer(userToken);
+    }
+
+    async deleteRoom(userToken: string, campaignToken: string) : Promise<void> {
+        if(!userToken) {
+            console.log("Could not create a new room for campaignToken ");
             return;
         }
 
-        RoomQueries.joinRoom(playerId, sessionToken);
-    }
-
-    async leaveRoom(userToken: string, sessionToken: string) {
-        let playerId = await this.findPlayerIdByUserToken(userToken);
-        if(!playerId) {
-            console.log("Could not create a new room for sessionToken ");
-            return;
+        let response = await RoomQueries.deleteRoom(userToken, campaignToken);
+        console.log(campaignToken, userToken);
+        console.log(response);
+        if (response[0] === 0) {
+            console.log("Could not delete the room");
+            throw new UnauthorizedError("Could not delete the room");
         }
 
-        RoomQueries.leaveRoom(playerId, sessionToken ?? "");
-    }
-
-    async findPlayerIdByUserToken(userToken: string) : Promise<Number> { 
-        const storedUser = await UserQueries.findByToken(userToken);
-        if(!storedUser) {
-            console.log("User not found in database");
-            return Promise.resolve(0);
-        }
-
-        return Promise.resolve(storedUser.id);
-    }
-
-    async findPlayersInRoom(userToken: string) : Promise<Room[]> {
-        const storedUser = await UserQueries.findByToken(userToken);
-        if(!storedUser) {
-            console.log("User not found in database");
-            return Promise.resolve([]);
-        }
-
-        return RoomQueries.findRoomsByPlayer(storedUser.id);
+        return;
     }
 }
 

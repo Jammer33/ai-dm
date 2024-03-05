@@ -6,7 +6,7 @@ class SessionState extends Model {
     s3Id!: string;
 
     @Column(DataType.STRING)
-    sessionToken!: string;
+    campaignToken!: string;
 }
 
 export default SessionState;

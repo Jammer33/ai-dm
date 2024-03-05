@@ -4,7 +4,7 @@ import UserQueries from '../queries/UserQueries';
 import RoomQueries from '../queries/RoomQueries';
 
 class MessageController {
-    // memory state mapping that goes from (session token)->(player id, message id)
+    // memory state mapping that goes from (campaignToken)->(player id, message id)
     private sessionPlayerMessages = new Map<string, Map<string, string>>();
     private tokenCache = new Map<string, string>();
     
@@ -14,34 +14,34 @@ class MessageController {
 
     // stores the messages in a mmoery representation for the given token
     // and then triggers the DM to respond
-    async storeMessageAndActivateDM(sessionToken : string, authToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
+    async storeMessageAndActivateDM(campaignToken : string, authToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
         let playerId = await this.findPlayerEmailFromToken(authToken);
         if(!playerId) {
-            console.log("no player found for session token: " + sessionToken);
+            console.log("no player found for campaign token: " + campaignToken);
             return Promise.resolve();
         }
         
-        if(!this.sessionPlayerMessages.has(sessionToken)) {
-            this.sessionPlayerMessages.set(sessionToken, new Map<string, string>());
+        if(!this.sessionPlayerMessages.has(campaignToken)) {
+            this.sessionPlayerMessages.set(campaignToken, new Map<string, string>());
         }
-        this.sessionPlayerMessages.get(sessionToken)?.set(playerId, message);
+        this.sessionPlayerMessages.get(campaignToken)?.set(playerId, message);
 
-        if((this.sessionPlayerMessages.get(sessionToken)?.size ?? 0)
-            >= (await this.getNumberOfPlayers(sessionToken))) {
-            let formattedUserMessages = this.formatMemoryForDM(sessionToken);
-            this.sessionPlayerMessages.delete(sessionToken);
-            const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, sessionToken, socket);
+        if((this.sessionPlayerMessages.get(campaignToken)?.size ?? 0)
+            >= (await this.getNumberOfPlayers(campaignToken))) {
+            let formattedUserMessages = this.formatMemoryForDM(campaignToken);
+            this.sessionPlayerMessages.delete(campaignToken);
+            const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, campaignToken, socket);
             return Promise.resolve(response);
         }
         
         return Promise.resolve();
     }
 
-    formatMemoryForDM(sessionToken : string) {
+    formatMemoryForDM(campaignToken : string) {
         let formattedMemory = "";
-        let playerMessages = this.sessionPlayerMessages.get(sessionToken); 
+        let playerMessages = this.sessionPlayerMessages.get(campaignToken); 
         if(!playerMessages) {
-            console.log("no messages for session token: " + sessionToken);
+            console.log("no messages for campaign token: " + campaignToken);
             return "no players for this game";
         }
         
@@ -51,8 +51,8 @@ class MessageController {
         return formattedMemory;
     }
 
-    async getNumberOfPlayers(sessionToken : string) {
-        return await RoomQueries.findActiveNumberOfPlayersInRoom(sessionToken);
+    async getNumberOfPlayers(campaignToken : string) {
+        return await RoomQueries.findActiveNumberOfPlayersInRoom(campaignToken);
     }
 
     async findPlayerEmailFromToken(authToken: string) : Promise<string | null> {
@@ -70,10 +70,10 @@ class MessageController {
         return Promise.resolve(storedUser.email);
     }
 
-    async getRecentMessages(sessionToken: string) : Promise<Map<String, String>> {
-        const playerMessages = this.sessionPlayerMessages.get(sessionToken);
+    async getRecentMessages(campaignToken: string) : Promise<Map<String, String>> {
+        const playerMessages = this.sessionPlayerMessages.get(campaignToken);
         if(!playerMessages) {
-            console.log("no messages from players for session token: " + sessionToken);
+            console.log("no messages from players for campaignToken: " + campaignToken);
             return Promise.resolve(new Map<string, string>());
         }
 

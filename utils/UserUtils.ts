@@ -8,6 +8,10 @@ export function generateResetToken() {
     return generateToken(16, 'rs_');
 }
 
+export function generateCampaignToken() {
+    return generateToken(12, 'c_');
+}
+
 export function generateToken(length = 7, prefix = '') {
     const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
     const charactersLength = characters.length;
