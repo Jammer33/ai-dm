@@ -33,7 +33,7 @@ class DungeonMasterController {
     }
 
     async initStory(characters: Character[], campaignToken: string) {
-        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character.class).join(", ")
+        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character._class).join(", ")
         const initialPrompt = DungeonMasterService.DungeonMasterPrompt + "\n" + charactersString + ".\n" + "Please begin the story by describing the setting and the current situation. Also explain to the characters how they got to where they are now. The setting should be somewhere within the Forgotten Realms.";
 
         const response = await OpenAIService.getChat([{ content: initialPrompt, role: "system" }]);
@@ -48,7 +48,7 @@ class DungeonMasterController {
     }
 
     async initStoryStreamed(characters: Character[], campaignToken: string, socket: BroadcastOperator<any, any>) {
-        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character.class).join(", ")
+        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character._class).join(", ")
         const initialPrompt = DungeonMasterService.DungeonMasterPrompt + "\n" + charactersString + ".\n" + "Please begin the story by describing the setting and the current situation.";
 
         const response = await OpenAIService.getChatStreamed([{ content: initialPrompt, role: "system" }], socket);

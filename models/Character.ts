@@ -26,7 +26,7 @@ export interface Character {
     id: number;
     name: string;
     description: string;
-    class: Class;
+    _class: Class;
     race: Race;
     level: number;
 }
