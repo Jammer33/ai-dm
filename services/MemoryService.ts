@@ -6,6 +6,7 @@ import Memory from "../db_models/memories";
 import MemoryQueries from "../queries/MemoryQueries";
 import SessionStateQueries from "../queries/SessionStateQueries";
 import SessionState from "../db_models/sessionState";
+import MessageQueries from "../queries/MessageQueries";
 
 
 const enum OpenAIModel {
@@ -106,6 +107,13 @@ class MemoryService {
     ]);
   }
 
+  async storeMessage(text: string, campaignToken: string, userToken: string) {
+    const messageId = (await MessageQueries.createMessage(campaignToken, userToken, text)).id;
+    const embedding = await this.getEmbedding(text);
+
+    this.pineconeIndex.namespace(campaignToken).upsert([{ id: messageId.toString(), values: embedding }]);
+  }
+
   async retrieveRelevant(query: string, n = 3, campaignToken: string) {
     const queryEmbedding = await this.getEmbedding(query);
     const queryResponse = await this.pineconeIndex.namespace(campaignToken).query({
@@ -113,23 +121,15 @@ class MemoryService {
         topK: n,
         includeValues: true,
       });
-    console.log("query response:", queryResponse);
 
     const ids = queryResponse?.matches?.map((match) => match.id) || [];
     if (ids.length === 0) {
       return [];
     }
 
-    let res = [];
-    for (let i = 0; i < ids.length; i++) {
-      const result = await this.retrieveS3Bucket(ids[i]);
-      res.push({
-        content: result.content,
-        importance: result.importance,
-      });
-    }
+    const res = (await MessageQueries.findMessagesByIds(ids)).filter((message) => message.content !== query);
     
-    return res;
+    return Promise.resolve(res);
   }
 
   async retrieveRecent(campaignToken: string) {

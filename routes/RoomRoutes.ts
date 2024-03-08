@@ -1,6 +1,7 @@
 import express from 'express';
 import { Request } from "express-jwt";
 import RoomController from '../controllers/RoomController';
+import RoomQueries from '../queries/RoomQueries';
 
 const router = express.Router();
 
@@ -40,6 +41,18 @@ router.delete('/:campaignToken', async (req : Request, res) => {
         console.log("Could not delete the room: " + err);
         return res.json({message: "could not delete the room"});
     });
+});
+
+// check if user is part of the room
+router.get('/isInRoom/:campaignToken', async (req : Request, res) => {
+    let userToken = req.auth?.userToken;
+    let campaignToken = req.params.campaignToken;
+    if (!userToken || !campaignToken) {
+        return res.json({message: "could not check"});
+    }
+
+    let isInRoom = await RoomQueries.isPlayerInRoom(userToken, campaignToken);
+    return res.json({message: isInRoom});
 });
 
 export default router;

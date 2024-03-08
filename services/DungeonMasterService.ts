@@ -1,10 +1,11 @@
 import { ChatCompletionMessageParam } from "openai/resources";
 import DungeonMasterController from "../controllers/DungeonMasterController";
 import MemoryService from "./MemoryService";
-import OpenAIService, { Message } from "./OpenAIService";
+import OpenAIService from "./OpenAIService";
+import Message from "../db_models/message";
 
 class DungeonMasterService {
-    DungeonMasterPrompt = `You are a humorous, witty, and skillful dungeon master. You must guide your players through an engaging and fun D&D 5th Edition adventure! Only tell players what they're actual in-game characters know, nothing more. Remember good story teller don't tell their audience things but instead show them through actions and descriptions. However avoid being overly verbose. Also avoid talking directly to the player or suggesting their next moves. This game is played in real-time. Reveal nothing about later events to players. Never roll for your players or make decisions for them. Never end the session unless the campaign has come to a finish. Please ensure to balance combat, puzzles, and role-play. Create an engaging storyline as we go along, always adjusting to what the players do. Please manage experience points and character leveling. Please follow the rules of D&D 5E. For example ask players to roll skill checks when needed. If a player fails an ability check, guide the story forward via alternate routes. Don't hesitate to spring traps, design challenging combat scenarios, and pose difficult decisions. Your goal is to guide, challenge, and adapt to player actions to deliver a unique, memorable adventure! Everything you say will be shown to the players. If you ask for a skill check never tell players what will or might happen before they tell you what they rolled.`;
+    DungeonMasterPrompt = `You are a skillful dungeon master. You must guide your players through an engaging and fun D&D 5th Edition adventure! Only tell players what they're actual in-game characters know, nothing more. Remember good story teller don't tell their audience things but instead show them through actions and descriptions. However avoid being overly verbose. Also avoid talking directly to the player or suggesting their next moves. This game is played in real-time. Reveal nothing about later events to players. Never roll for your players or make decisions for them. Never end the session unless the campaign has come to a finish. Please ensure to balance combat, puzzles, and role-play. Create an engaging storyline as we go along, always adjusting to what the players do. Please manage experience points and character leveling. Please follow the rules of D&D 5E. For example ask players to roll skill checks when needed. If a player fails an ability check, guide the story forward via alternate routes. Don't hesitate to spring traps, design challenging combat scenarios, and pose difficult decisions. Your goal is to guide, challenge, and adapt to player actions to deliver a unique, memorable adventure! Everything you say will be shown to the players. If you ask for a skill check never tell players what will or might happen before they tell you what they rolled.`;
 
     // Prompt get iteratively update the session state with new story information and return the new state
     private firstPrompt = "The following is the current session notes of a 5E Dungeons & Dragons campaign."
@@ -43,35 +44,38 @@ class DungeonMasterService {
         return newState;
     }
 
-    async getFormattedContext(campaignToken: string, message: string) {
-        const [releventMemories, recentMemories, sessionState] = await Promise.all([
-            MemoryService.retrieveRelevant(message, 3, campaignToken),
-            MemoryService.retrieveRecent(campaignToken),
-            MemoryService.retrieveSessionState(campaignToken)
-        ]);
+    async getRelevantMessagesForMessages(messages: Message[], campaignToken: string) {
+        let relevantMessageHistory: Promise<Message[]>[] = [];
 
-        return this.formatMessages(recentMemories, releventMemories, message, sessionState);
+        for (let message of messages) {
+            relevantMessageHistory.concat(MemoryService.retrieveRelevant(message.content, 3, campaignToken));
+        }
+
+        return Promise.all(relevantMessageHistory);
     }
 
-    private formatMessages(
-        recentMemories: { content: string }[],
-        relevantMemories: { content: string }[],
-        message: string,
+
+    formatMessages(
+        recentMessages: Message[],
+        relevantMessages: Message[],
+        messages: Message[],
         state: string
         ): ChatCompletionMessageParam[] {
         const sessionState: string = "[Session State (this is the current state of the campaign)]\n" + state;
-        const recentMemoryContext: string = "[Conversation History (this is the most recent conversation from the campaign)]\n" + recentMemories.reverse().map((memory) => memory.content).join(" ");
-        const relevantMemoryContext: string = "[Story History (these are old tidbits from the campaign that might be relevant to what is going on now. Not recent.)]\n" + relevantMemories.reverse().map((memory) => memory.content).join(" ");
-        const userInput: string = "[User Input]\n" + message;
-        const messages: ChatCompletionMessageParam[] = [
+        const recentMemoryContext: string = "[Conversation History (this is the most recent conversation from the campaign)]\n" + recentMessages.reverse().map((memory) => memory.content).join(" ");
+        const relevantMemoryContext: string = "[Story History (these are old tidbits from the campaign that might be relevant to what is going on now. Not recent.)]\n" + relevantMessages.reverse().map((memory) => memory.content).join(" ");
+        let promptMessages: ChatCompletionMessageParam[] = [
             { content: this.DungeonMasterPrompt, role: "system" },
             { content: sessionState, role: "system" },
             { content: relevantMemoryContext, role: "assistant" },
             { content: recentMemoryContext, role: "assistant" },
-            { content: userInput, role: "user" },
         ];
 
-        return messages;
+        for (let message of messages) {
+            promptMessages.push({ content: message.roomToPlayer.characterName + " said: \n" + message.content, role: "user" });
+        }
+
+        return promptMessages;
     }
 }
 

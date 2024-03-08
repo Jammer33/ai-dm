@@ -2,6 +2,8 @@ import DungeonMasterController from './DungeonMasterController';
 import { BroadcastOperator } from 'socket.io';
 import UserQueries from '../queries/UserQueries';
 import RoomQueries from '../queries/RoomQueries';
+import MessageQueries from '../queries/MessageQueries';
+import MemoryService from '../services/MemoryService';
 
 class MessageController {
     // memory state mapping that goes from (campaignToken)->(player id, message id)
@@ -12,29 +14,17 @@ class MessageController {
         console.log('MessageController constructor');
     }
 
-    // stores the messages in a mmoery representation for the given token
-    // and then triggers the DM to respond
-    async storeMessageAndActivateDM(campaignToken : string, authToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
-        let playerId = await this.findPlayerEmailFromToken(authToken);
-        if(!playerId) {
-            console.log("no player found for campaign token: " + campaignToken);
-            return Promise.resolve();
-        }
-        
-        if(!this.sessionPlayerMessages.has(campaignToken)) {
-            this.sessionPlayerMessages.set(campaignToken, new Map<string, string>());
-        }
-        this.sessionPlayerMessages.get(campaignToken)?.set(playerId, message);
+    async storeMessageAndActivateDM(campaignToken : string, userToken: string, message: string, socket: BroadcastOperator<any,any>) : Promise<any> {
+        await MemoryService.storeMessage(message, campaignToken, userToken);
+        let numActivePlayers = await this.getNumberOfPlayers(campaignToken);
+        let numPlayersMessaged = await MessageQueries.getNumPlayersMessagedSinceDM(campaignToken);
 
-        if((this.sessionPlayerMessages.get(campaignToken)?.size ?? 0)
-            >= (await this.getNumberOfPlayers(campaignToken))) {
-            let formattedUserMessages = this.formatMemoryForDM(campaignToken);
-            this.sessionPlayerMessages.delete(campaignToken);
-            const response = await DungeonMasterController.getDMReplyStreamed(formattedUserMessages, campaignToken, socket);
+        if(numPlayersMessaged >= numActivePlayers) {
+            let userMessages = await MessageQueries.getPlayerMessagesSinceDM(campaignToken);
+            console.log("userMessages: " + JSON.stringify(userMessages));
+            const response = await DungeonMasterController.getDMReplyStreamed(userMessages, campaignToken, socket);
             return Promise.resolve(response);
         }
-        
-        return Promise.resolve();
     }
 
     formatMemoryForDM(campaignToken : string) {

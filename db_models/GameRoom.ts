@@ -2,10 +2,6 @@ import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Default } fr
 
 @Table
 class Room extends Model {
-    @AutoIncrement
-    @Column(DataType.INTEGER)
-    campaignId!: Number;
-
     @PrimaryKey
     @Column(DataType.STRING)
     campaignToken!: string;

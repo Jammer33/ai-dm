@@ -5,15 +5,18 @@ import { RoomState } from "../models/General";
 class RoomToPlayer extends Model {
     @PrimaryKey
     @Column(DataType.STRING)
-    campaignToken!: String;
+    campaignToken!: string;
 
     @PrimaryKey
     @Column(DataType.STRING)
-    playerToken!: String;
+    userToken!: string;
 
     @Default(RoomState.INACTIVE)
     @Column(DataType.ENUM('ACTIVE', 'INACTIVE'))
     state!: RoomState;
+
+    @Column(DataType.STRING)
+    characterName!: string;
 }
 
 export default RoomToPlayer;

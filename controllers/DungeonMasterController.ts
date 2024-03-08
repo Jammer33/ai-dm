@@ -1,59 +1,44 @@
-import OpenAIService, { Message } from '../services/OpenAIService';
+import OpenAIService from '../services/OpenAIService';
 import MemoryService from '../services/MemoryService';
 import { Character } from '../models/Character';
 import DungeonMasterService from '../services/DungeonMasterService';
 import { BroadcastOperator } from 'socket.io';
+import Message from '../db_models/message';
+import MessageQueries from '../queries/MessageQueries';
 
 class DungeonMasterController {
 
     constructor() {}
 
-    async getDMReply(message: string, campaignToken: string) { 
-        const formattedContext = await DungeonMasterService.getFormattedContext(campaignToken, message);
+    async getDMReplyStreamed(messages: Message[], campaignToken: string, socket: BroadcastOperator<any, any>) { 
+        const [listOfRelevantMessages, setOfRecentMessages, sessionState] = await Promise.all([
+            DungeonMasterService.getRelevantMessagesForMessages(messages, campaignToken),
+            MessageQueries.getNotNewRecentMessages(campaignToken),
+            MemoryService.retrieveSessionState(campaignToken),
+        ]);
 
-        const response = await OpenAIService.getChat(formattedContext);
-        
-        MemoryService.store(this.formatMemory(message, response), 1, campaignToken);
+        const setOfRelevantMessages = Array.from(new Set(listOfRelevantMessages.flat()));
 
-        DungeonMasterService.updateState(this.formatMemory(message, response), campaignToken);
-        
-        return response;
-    }
+        const formattedContext = await DungeonMasterService.formatMessages(setOfRecentMessages, setOfRelevantMessages, messages, sessionState);
 
-    async getDMReplyStreamed(message: string, campaignToken: string, socket: BroadcastOperator<any, any>) { 
-        const formattedContext = await DungeonMasterService.getFormattedContext(campaignToken, message);
+        console.log("formatted context: " + JSON.stringify(formattedContext));
 
         const response = await OpenAIService.getChatStreamed(formattedContext, socket);
 
-        MemoryService.store(this.formatMemory(message, response), 1, campaignToken);
+        MemoryService.storeMessage(response, campaignToken, "DM");
 
-        DungeonMasterService.updateState(this.formatMemory(message, response), campaignToken);
+        DungeonMasterService.updateState(this.formatMemory(messages, response), campaignToken);
         
         return response;
     }
 
-    async initStory(characters: Character[], campaignToken: string) {
-        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character._class).join(", ")
-        const initialPrompt = DungeonMasterService.DungeonMasterPrompt + "\n" + charactersString + ".\n" + "Please begin the story by describing the setting and the current situation. Also explain to the characters how they got to where they are now. The setting should be somewhere within the Forgotten Realms.";
-
-        const response = await OpenAIService.getChat([{ content: initialPrompt, role: "system" }]);
-
-        MemoryService.store(this.formatMemory("", response), 1, campaignToken);
-
-        const sessionInfo = charactersString + "\n" + response;
-
-        DungeonMasterService.createNewState(sessionInfo, campaignToken);
-
-        return response;
-    }
-
-    async initStoryStreamed(characters: Character[], campaignToken: string, socket: BroadcastOperator<any, any>) {
-        const charactersString = "The characters involved in this story are: " + characters.map((character) => character.name + " a " + character.race + " " + character._class).join(", ")
+    async initStoryStreamed(character: Character, campaignToken: string, socket: BroadcastOperator<any, any>) {
+        const charactersString = "The character involved in this story is: " + character.name + " a " + character.race + " " + character._class;
         const initialPrompt = DungeonMasterService.DungeonMasterPrompt + "\n" + charactersString + ".\n" + "Please begin the story by describing the setting and the current situation.";
 
         const response = await OpenAIService.getChatStreamed([{ content: initialPrompt, role: "system" }], socket);
 
-        MemoryService.store(this.formatMemory("", response), 1, campaignToken);
+        MemoryService.storeMessage(response, campaignToken, "DM");
 
         const sessionInfo = charactersString + "\n" + response;
 
@@ -73,16 +58,15 @@ class DungeonMasterController {
         return memories[memories.length-1].content; 
     }
 
-    formatMemory(userMessage: string, dungeonMasterResponse: string, sessionState?: string) {
-        return "[User Input]\n" + userMessage + "\n[DM Response]\n" + dungeonMasterResponse + "\n";
+    formatMemory(userMessages: Message[], dungeonMasterResponse: string, sessionState?: string) {
+        return "[User Input]\n" + userMessages.reduce((acc, message) => acc + message.roomToPlayer.characterName + " said: " + message.content + "\n", "") + "\n[DM Response]\n" + dungeonMasterResponse + "\n[Session State]\n" + sessionState;
+            
     }
 
     async requestTTSAudio(message: string, socket: BroadcastOperator<any, any>, playbackSpeed: number) {
         const response = await OpenAIService.getStreamedTTS(message, socket, playbackSpeed);
         return response;
     }
-
-
 }
 
 export default new DungeonMasterController();

@@ -4,6 +4,7 @@ import SessionState from "./sessionState";
 import Memory from "./memories";
 import Room from "./GameRoom";
 import RoomToPlayer from "./RoomPlayer";
+import Message from "./message";
 
 const sequelize = new Sequelize({
     database: process.env.AWS_RDS_DB_NAME,
@@ -18,7 +19,7 @@ const sequelize = new Sequelize({
 
 });
 
-sequelize.addModels([User, SessionState, Memory, RoomToPlayer, Room]);
+sequelize.addModels([User, SessionState, Memory, RoomToPlayer, Room, Message]);
 Room.hasMany(RoomToPlayer, {
     foreignKey: 'campaignToken',
 });
