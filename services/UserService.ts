@@ -30,7 +30,7 @@ class UserService {
         return await jwtoken;
     }
 
-    async verifyUser(token: string): Promise<string> {
+    async verifyUser(token: string): Promise<{ email: string; userToken: any; }> {
         // retrieve the user from the database
         const payload = jwt.verify( token, process.env.SECRET_KEY!! ) as any;
         console.log(payload);
@@ -47,10 +47,10 @@ class UserService {
             email = storedUser.email;
         }
 
-        return email;
+        return {email, userToken: payload.userToken};
     }
 
-    async loginUser(user: UserLoginRequest): Promise<string> {
+    async loginUser(user: UserLoginRequest): Promise<{ jwtoken: string; userToken: string; }> {
         // retrieve the user from the database
         const storedUser = await UserQueries.findByEmail(user.email);
         if (!storedUser) {
@@ -64,7 +64,7 @@ class UserService {
 
         const jwtoken = jwt.sign({ userToken: storedUser.userToken }, process.env.SECRET_KEY!!, { expiresIn: '1w' })
 
-        return await jwtoken;
+        return {jwtoken, userToken: storedUser.userToken};
     }
 
     async resetPassword(oldPassword: string, newPassword: string, userToken: string): Promise<void> {

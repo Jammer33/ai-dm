@@ -16,20 +16,20 @@ class UserController {
         return jwtToken;
     }
 
-    async verifyUser(token: string): Promise<string> {
-        const email = await UserService.verifyUser(token);
-        if (!email) {
+    async verifyUser(token: string): Promise<{ email: string; userToken: any; }> {
+        const response = await UserService.verifyUser(token);
+        if (!response.email) {
             throw new InternalServerError("Error verifying user");
         }
-        return email;
+        return response;
     }
 
-    async loginUser(user: UserLoginRequest): Promise<string> {
-        const jwtToken = await UserService.loginUser(user);
-        if (!jwtToken) {
+    async loginUser(user: UserLoginRequest): Promise<{ jwtoken: string; userToken: string; }> {
+        const response = await UserService.loginUser(user);
+        if (!response.jwtoken) {
             throw new InternalServerError("Error logging in user");
         }
-        return jwtToken;
+        return response;
     }
 
     async resetPassword(oldPassword: string, newPassword: string, userToken: UserToken): Promise<void> {

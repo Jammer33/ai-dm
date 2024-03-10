@@ -18,29 +18,29 @@ router.post('/signup', async (req, res) => {
 });
 
 // verify user
-router.get('/verify', async (req, res) => {
+router.get('/verify', async (req: any, res) => {
     if (!(req.cookies && req.cookies.token)) {
         res.status(400);
         return res.json({ message: "Verification Failed"});
     }
-    const email = await UserController.verifyUser(req.cookies.token);
+    const {email, userToken} = await UserController.verifyUser(req.cookies.token);
 
-    return res.json({ message: "Successfully Verified", email: email });
+    return res.json({ message: "Successfully Verified", email: email, userToken: userToken });
 });
 
 // login user
 router.post('/login', async (req, res) => {
     console.log(req.cookies);
     var { email, password } = req.body;
-    const jwtToken = await UserController.loginUser({email, password});
-    res.cookie('token', jwtToken, {
+    const response = await UserController.loginUser({email, password});
+    res.cookie('token', response.jwtoken, {
         httpOnly: false,
         secure: true, // Ensure you're running your server with HTTPS for this to work
         sameSite: 'lax',
         expires: new Date(Date.now() + 60 * 60 * 1000 * 24), // 1 day
         domain: process.env.NODE_ENV === 'dev' ? 'localhost' : 'wizardgm.ai'
     });
-    return res.json({ message: "Successfully Logged In" });
+    return res.json({ message: "Successfully Logged In", userToken: response.userToken });
 });
 
 // logout user
