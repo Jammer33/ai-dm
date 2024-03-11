@@ -6,12 +6,13 @@ class MessageQueries {
     constructor() {}
 
     async getNumPlayersMessagedSinceDM(campaignToken: string): Promise<number> {
-        const lastDmMessage = await Message.findOne({
+        const DMMessages = await Message.findAll({
             where: {
                 campaignToken: campaignToken,
                 userToken: "DM",
             },
         });
+        const lastDmMessage = DMMessages[DMMessages.length - 1];
 
         return Message.count({
             distinct: true,

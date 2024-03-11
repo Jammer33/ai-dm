@@ -43,6 +43,17 @@ class RoomQueries {
         });
     }
 
+    async rejoinRoom(userToken: string, campaignToken: string) {
+        RoomToPlayer.update({
+            state: RoomState.ACTIVE,
+        },{
+            where: {
+                campaignToken: campaignToken,
+                userToken: userToken,
+            },
+        });
+    }
+
     async findRoomsByPlayer(userToken: string) : Promise<Room[]> {
         console.log("Finding rooms for player: ", userToken);
         return Room.findAll({

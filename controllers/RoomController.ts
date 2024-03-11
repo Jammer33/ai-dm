@@ -20,6 +20,10 @@ class RoomController {
         RoomQueries.leaveRoom(userToken, campaignToken ?? "");
     }
 
+    async rejoinRoom(userToken: string, campaignToken: string) {
+        await RoomQueries.rejoinRoom(userToken, campaignToken);
+    }
+
     async findPlayerRooms(userToken: string) : Promise<Room[]> {
         return RoomQueries.findRoomsByPlayer(userToken);
     }

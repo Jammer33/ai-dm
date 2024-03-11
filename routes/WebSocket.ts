@@ -52,6 +52,7 @@ const socket = (io: Server) => {
             // check if the user is already in the room
             if (await RoomQueries.isPlayerInRoom(socket.decoded["userToken"], campaignToken)) {
                 console.log("user already in this campaign. Just adding to socket room.");
+                await RoomController.rejoinRoom(socket.decoded["userToken"], campaignToken);
             } else {
                 await RoomController.joinRoom(socket.decoded["userToken"], campaignToken, character)
                 joinRoomMessage = character.name + " has joined the game as a " + character.race + " " + character._class + "!";
