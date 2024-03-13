@@ -86,7 +86,7 @@ class UserService {
 
   async loginGoogleAuthUser(
     user: UserLoginRequest
-  ): Promise<{ userToken: string }> {
+  ): Promise<{ jwtoken: string; userToken: string }> {
     // retrieve the user from the database
     const storedUser = await UserQueries.findByEmail(user.email);
     var userToken = "";
@@ -110,7 +110,16 @@ class UserService {
       }
     }
 
-    return { userToken: storedUser ? storedUser.userToken : userToken };
+    const jwtoken = jwt.sign(
+      { userToken: storedUser ? storedUser.userToken : userToken },
+      process.env.SECRET_KEY!!,
+      { expiresIn: "1w" }
+    );
+
+    return {
+      jwtoken,
+      userToken: storedUser ? storedUser.userToken : userToken,
+    };
   }
 
   async resetPassword(
