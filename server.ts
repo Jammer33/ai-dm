@@ -1,26 +1,25 @@
-import 'express-async-errors'; 
-import { expressjwt } from 'express-jwt';
-import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import { Server } from 'socket.io';
-import { config } from 'dotenv';
-import https from 'https';
-import http from 'http';
+import "express-async-errors";
+import { expressjwt } from "express-jwt";
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import { Server } from "socket.io";
+import { config } from "dotenv";
+import https from "https";
+import http from "http";
 (async () => {
-  await config({path: '.env'});
+  await config({ path: ".env" });
 })();
 
-import dungeonMasterRoutes from './routes/dungeonMaster';
-import userRoutes from './routes/UserRoutes';
-import accountRoutes from './routes/AccountRoutes';
-import roomRoutes from './routes/RoomRoutes';
-import socket from './routes/WebSocket';
-import { ErrorHandler } from './middleware/ErrorHandler';
-import cookieParser from 'cookie-parser';
-import "cookie-parser"
-import fs from 'fs';
-import AuthCheck from './middleware/AuthCheck';
+import dungeonMasterRoutes from "./routes/dungeonMaster";
+import userRoutes from "./routes/UserRoutes";
+import accountRoutes from "./routes/AccountRoutes";
+import roomRoutes from "./routes/RoomRoutes";
+import socket from "./routes/WebSocket";
+import { ErrorHandler } from "./middleware/ErrorHandler";
+import cookieParser from "cookie-parser";
+import fs from "fs";
+import AuthCheck from "./middleware/AuthCheck";
 
 declare module "jsonwebtoken" {
   export interface JwtPayload {
@@ -31,63 +30,78 @@ declare module "jsonwebtoken" {
 const app = express();
 const port = process.env.PORT || 3001;
 
-const allowedOrigins = ['https://wizardgm.ai', 'https://staging.wizardgm.ai', 'https://www.wizardgm.ai'];
-
+const allowedOrigins = [
+  "https://wizardgm.ai",
+  "https://staging.wizardgm.ai",
+  "https://www.wizardgm.ai",
+];
 
 app.use(bodyParser.json());
 // allow requests from wizardgm.ai and staging.wizardgm.ai
-if (process.env.NODE_ENV === 'dev') {
-  app.use(cors({
-    origin: 'https://localhost:3000',
-    credentials: true,
-  }))
-} else if (process.env.NODE_ENV === 'staging') {
-  app.use(cors({
-    origin: ["https://localhost:3000", "https://staging.wizardgm.ai"],
-    credentials: true,
-  }))
+if (process.env.NODE_ENV === "dev") {
+  app.use(
+    cors({
+      origin: "https://localhost:3000",
+      credentials: true,
+    })
+  );
+} else if (process.env.NODE_ENV === "staging") {
+  app.use(
+    cors({
+      origin: ["https://localhost:3000", "https://staging.wizardgm.ai"],
+      credentials: true,
+    })
+  );
 } else {
-  app.use(cors({
-    origin: 'https://www.wizardgm.ai',
-    credentials: true,
-  }))
+  app.use(
+    cors({
+      origin: "https://www.wizardgm.ai",
+      credentials: true,
+    })
+  );
 }
 
-app.use(cookieParser())
+app.use(cookieParser());
 
 // Public User Routes
-app.use('/user', userRoutes);
+app.use("/user", userRoutes);
 
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   // return 200
   res.sendStatus(200);
 });
 
-
 // Middleware to validate JWT and protect routes
-app.use(expressjwt(
-  { 
+app.use(
+  expressjwt({
     secret: process.env.SECRET_KEY!!,
-    algorithms: ['HS256'],
+    algorithms: ["HS256"],
     getToken: function fromCookie(req) {
       if (req.cookies && req.cookies.token) {
-          return req.cookies.token;
+        return req.cookies.token;
       }
       return undefined; // if there isn't any token
     },
-  }
-).unless({path: ['/user/signup', '/user/login', '/user/forgot-password', '/user/reset-password']})
+  }).unless({
+    path: [
+      "/user/signup",
+      "/user/login",
+      "/user/googleAuthLogin",
+      "/user/forgot-password",
+      "/user/reset-password",
+    ],
+  })
 );
 
-app.use(AuthCheck)
+app.use(AuthCheck);
 
-app.use('/account', accountRoutes);
+app.use("/account", accountRoutes);
 
-app.use('/room', roomRoutes);
+app.use("/room", roomRoutes);
 
-app.use('/dungeon-master', dungeonMasterRoutes);
+app.use("/dungeon-master", dungeonMasterRoutes);
 
-const isDev = process.env.NODE_ENV === 'dev';
+const isDev = process.env.NODE_ENV === "dev";
 
 let server;
 
@@ -96,13 +110,12 @@ if (!isDev) {
   server = http.createServer(app);
 } else {
   // In development, use local SSL certificates for testing HTTPS
-  const privateKey = fs.readFileSync('keys/server.key', 'utf8');
-  const certificate = fs.readFileSync('keys/server.crt', 'utf8');
+  const privateKey = fs.readFileSync("keys/server.key", "utf8");
+  const certificate = fs.readFileSync("keys/server.crt", "utf8");
   const credentials = { key: privateKey, cert: certificate };
 
   server = https.createServer(credentials, app);
 }
-
 
 let serverConfig;
 if (isDev) {
@@ -113,7 +126,7 @@ if (isDev) {
       credentials: true,
     },
   };
-} else if (process.env.NODE_ENV == 'staging') {
+} else if (process.env.NODE_ENV == "staging") {
   serverConfig = {
     cookie: true,
     cors: {
