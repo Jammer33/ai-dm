@@ -72,6 +72,11 @@ class UserService {
     }
     // compare the passwords
     const match = bcrypt.compareSync(user.password, storedUser.password);
+
+    if (!storedUser.password) {
+      throw new BadRequestError("Please login using Google Auth");
+    }
+
     if (!match) {
       throw new UnauthorizedError("Password and email do not match");
     }
@@ -103,6 +108,11 @@ class UserService {
 
       // retrieve the user from the database
       const storedUser = await UserQueries.findByEmail(userProfile.email);
+
+      if (storedUser?.password) {
+        throw new BadRequestError("Please login using email and password");
+      }
+
       var userToken = "";
 
       if (!storedUser) {
