@@ -59,11 +59,8 @@ router.post("/login", async (req, res) => {
 // login user using Googe OAuth
 router.post("/googleAuthLogin", async (req, res) => {
   console.log(req.cookies);
-  var { email, password } = req.body;
-  const response = await UserController.loginGoogleAuthUser({
-    email,
-    password,
-  });
+  var { access_token } = req.body;
+  const response = await UserController.loginGoogleAuthUser(access_token);
 
   res.cookie("token", response.jwtoken, {
     httpOnly: false,
@@ -76,6 +73,7 @@ router.post("/googleAuthLogin", async (req, res) => {
   return res.json({
     message: "Successfully Logged In",
     userToken: response.userToken,
+    email: response.email,
   });
 });
 

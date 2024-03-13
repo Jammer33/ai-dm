@@ -34,9 +34,9 @@ class UserController {
   }
 
   async loginGoogleAuthUser(
-    user: UserLoginRequest
-  ): Promise<{ jwtoken: string; userToken: string }> {
-    const response = await UserService.loginGoogleAuthUser(user);
+    access_token: string
+  ): Promise<{ jwtoken: string; userToken: string; email: string }> {
+    const response = await UserService.loginGoogleAuthUser(access_token);
     if (!response.jwtoken) {
       throw new InternalServerError("Error logging in user");
     }

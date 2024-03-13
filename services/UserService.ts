@@ -9,6 +9,7 @@ import {
 import jwt from "jsonwebtoken";
 import UserQueries from "../queries/UserQueries";
 import AWS from "aws-sdk";
+import axios from "axios";
 
 const RESET_TOKEN_TABLE = "dev_reset_token";
 const RESET_TOKEN_EXPIRATION = 60 * 60 * 2; // 2 hours
@@ -85,41 +86,59 @@ class UserService {
   }
 
   async loginGoogleAuthUser(
-    user: UserLoginRequest
-  ): Promise<{ jwtoken: string; userToken: string }> {
-    // retrieve the user from the database
-    const storedUser = await UserQueries.findByEmail(user.email);
-    var userToken = "";
-
-    if (!storedUser) {
-      // create a new user if player has signed on using google auth for the first time
-      userToken = generateUserToken();
-
-      // only story usertoken and email
-      const [username, password] = ["", ""];
-
-      const createdUser = await UserQueries.create(
-        username,
-        user.email,
-        password,
-        userToken
+    access_token: string
+  ): Promise<{ jwtoken: string; userToken: string; email: string }> {
+    try {
+      const response = await axios.get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${access_token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
+          },
+        }
       );
 
-      if (!createdUser) {
-        throw new InternalServerError("Error creating user");
+      const userProfile = response.data;
+
+      // retrieve the user from the database
+      const storedUser = await UserQueries.findByEmail(userProfile.email);
+      var userToken = "";
+
+      if (!storedUser) {
+        // create a new user if player has signed on using google auth for the first time
+        userToken = generateUserToken();
+
+        // only story usertoken and email
+        const [username, password] = ["", ""];
+
+        const createdUser = await UserQueries.create(
+          username,
+          userProfile.email,
+          password,
+          userToken
+        );
+
+        if (!createdUser) {
+          throw new InternalServerError("Error creating user");
+        }
       }
+
+      const jwtoken = jwt.sign(
+        { userToken: storedUser ? storedUser.userToken : userToken },
+        process.env.SECRET_KEY!!,
+        { expiresIn: "1w" }
+      );
+
+      return {
+        jwtoken,
+        userToken: storedUser ? storedUser.userToken : userToken,
+        email: userProfile.email,
+      };
+    } catch (error) {
+      console.error("Error fetching user information from Google API:", error);
+      throw new Error("Error fetching user information from Google API");
     }
-
-    const jwtoken = jwt.sign(
-      { userToken: storedUser ? storedUser.userToken : userToken },
-      process.env.SECRET_KEY!!,
-      { expiresIn: "1w" }
-    );
-
-    return {
-      jwtoken,
-      userToken: storedUser ? storedUser.userToken : userToken,
-    };
   }
 
   async resetPassword(
