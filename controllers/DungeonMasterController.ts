@@ -11,11 +11,30 @@ class DungeonMasterController {
     constructor() {}
 
     async getDMReplyStreamed(messages: Message[], campaignToken: string, socket: BroadcastOperator<any, any>) { 
-        const [listOfRelevantMessages, setOfRecentMessages, sessionState] = await Promise.all([
-            DungeonMasterService.getRelevantMessagesForMessages(messages, campaignToken),
-            MessageQueries.getNotNewRecentMessages(campaignToken),
-            MemoryService.retrieveSessionState(campaignToken),
-        ]);
+        const listOfRelevantMessagesPromise = DungeonMasterService.getRelevantMessagesForMessages(messages, campaignToken); 
+        const setOfRecentMessagesPromise = MessageQueries.getNotNewRecentMessages(campaignToken);
+        const sessionStatePromise = MemoryService.retrieveSessionState(campaignToken);
+        
+        let listOfRelevantMessages : Message[][] = [];
+        try {
+            listOfRelevantMessages = await listOfRelevantMessagesPromise;
+        } catch (e) {
+            console.log("Error getting relevant messages: " + e);
+        }
+
+        let setOfRecentMessages : Message[] = [];
+        try {
+            setOfRecentMessages = await setOfRecentMessagesPromise;
+        } catch (e) {
+            console.log("Error getting recent messages: " + e);
+        }
+
+        let sessionState : string = "";
+        try {
+            sessionState = await sessionStatePromise;
+        } catch (e) {
+            console.log("Error getting session state: " + e);
+        }
 
         const setOfRelevantMessages = Array.from(new Set(listOfRelevantMessages.flat()));
 
