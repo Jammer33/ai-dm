@@ -44,8 +44,10 @@ class MessageQueries {
             },
             include: [{ 
                 model: RoomToPlayer, 
-                attributes: ['characterName'], 
-                where: { campaignToken: campaignToken } 
+                attributes: ['characterName', 'userToken', 'campaignToken'], 
+                where: {
+                    '$Message.user_token$': { [Op.col]: 'roomToPlayer.user_token' },
+                }
             }],
         });
     }
@@ -68,8 +70,10 @@ class MessageQueries {
             },
             include: [{ 
                 model: RoomToPlayer, 
-                attributes: ['characterName'], 
-                where: { campaignToken: campaignToken } 
+                attributes: ['characterName', 'userToken', 'campaignToken'], 
+                where: {
+                    '$Message.user_token$': { [Op.col]: 'roomToPlayer.user_token' },
+                }
             }],
             order: [['createdAt', 'ASC']],
             limit: 20,
