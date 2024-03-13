@@ -55,24 +55,26 @@ const socket = (io: Server) => {
                 await RoomController.rejoinRoom(socket.decoded["userToken"], campaignToken);
             } else {
                 await RoomController.joinRoom(socket.decoded["userToken"], campaignToken, character)
-                joinRoomMessage = character.name + " has joined the game as a " + character.race + " " + character._class + "!";
+                joinRoomMessage = character.name + " the " + character.race + " " + character._class + " has joined the game!";
                 await loadRoom(campaignToken, { [socket.decoded["userToken"]]: character.name });
                 MemoryService.storeMessage(joinRoomMessage, campaignToken, "DM")
                 io.to(campaignToken).emit("reply", {content: joinRoomMessage, userToken: "DM", createdAt: new Date()});
-                
-                io.to(campaignToken).emit("updatePlayerList", { [socket.decoded["userToken"]]: character.name });
                 return;
             }
 
             loadRoom(campaignToken);
         });
 
-        const loadRoom = async (campaignToken: string, additionalPlayerNameMap = {}) => {
+        const loadRoom = async (campaignToken: string, updateAllPlayerLists: {} | null= null) => {
             const userTokenToCharacterNameMap = await RoomQueries.getUserTokenToCharacterNameMap(campaignToken);
 
             const messages = await MessageQueries.getMessagesForCampaign(campaignToken, 20, 0)
             console.log("map: " + JSON.stringify(Object.fromEntries(userTokenToCharacterNameMap)));
-            socket.emit("joinGame", messages, {...Object.fromEntries(userTokenToCharacterNameMap), ...additionalPlayerNameMap});
+            socket.emit("joinGame", messages, {...Object.fromEntries(userTokenToCharacterNameMap)});
+
+            if (updateAllPlayerLists) {
+                io.to(campaignToken).emit("updatePlayerList", {...Object.fromEntries(userTokenToCharacterNameMap), ...updateAllPlayerLists});
+            }
         }
 
 

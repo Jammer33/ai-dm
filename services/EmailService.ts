@@ -8,8 +8,20 @@ class EmailService {
     }
 
     public async sendPasswordResetEmail(email: string, token: string) {
+
+        // get environment
+        const environment = process.env.NODE_ENV;
+
+        // get domain
+        let domain = "wizardgm.ai";
+        if (environment === "dev") {
+            domain = "localhost:3000";
+        } else if (environment === "staging") {
+            domain = "staging.wizardgm.ai";
+        }
+
         const subject = "WizardGM Password Reset";
-        const html = `<p>Click <a href="http://localhost:3000/reset-password?resetToken=${token}">here</a> to reset your password.</p>`;
+        const html = `<p>Click <a href="https://${domain}/reset-password?resetToken=${token}">here</a> to reset your password.</p>`;
 
         console.log("Sending email to " + email);
         console.log("Subject: " + subject);
