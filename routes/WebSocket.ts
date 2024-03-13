@@ -69,7 +69,6 @@ const socket = (io: Server) => {
             const userTokenToCharacterNameMap = await RoomQueries.getUserTokenToCharacterNameMap(campaignToken);
 
             const messages = await MessageQueries.getMessagesForCampaign(campaignToken, 20, 0)
-            console.log("map: " + JSON.stringify(Object.fromEntries(userTokenToCharacterNameMap)));
             socket.emit("joinGame", messages, {...Object.fromEntries(userTokenToCharacterNameMap)});
 
             if (updateAllPlayerLists) {
@@ -91,7 +90,7 @@ const socket = (io: Server) => {
                 }).catch((err) => {
                     console.log("Could not start the story: " + err);
                 });
-                socket.emit("newGame", campaignToken);
+                socket.emit("newGame", campaignToken, { [socket.decoded["userToken"]]: character.name });
             }).catch((err) => {
                 console.log(err);
             });

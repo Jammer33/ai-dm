@@ -16,7 +16,7 @@ const enum OpenAIEndpoint {
 const enum OpenAIModel {
     GPT3 = 'gpt-3.5-turbo-instruct',
     GPT3_16K = 'gpt-3.5-turbo-1106',
-    GPT4 = 'gpt-4',
+    GPT4 = 'gpt-4-0125-preview',
 }
 
 export interface Message {
@@ -80,7 +80,7 @@ class OpenAIService {
         
     }
 
-    async callApiStream(data: OpenAIRequest, socket: BroadcastOperator<any, any>): Promise<any> {
+    async callApiStream(data: OpenAIRequest, socket: BroadcastOperator<any, any>): Promise<string> {
         const completion = await this.openai.chat.completions.create({
             model: this.model,
             messages: data.messages,

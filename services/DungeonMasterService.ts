@@ -3,9 +3,11 @@ import DungeonMasterController from "../controllers/DungeonMasterController";
 import MemoryService from "./MemoryService";
 import OpenAIService from "./OpenAIService";
 import Message from "../db_models/message";
+import { MessageParam } from "@anthropic-ai/sdk/resources";
+import { DungeonMasterPromptV2 } from "../prompts/GameMasterPrompt";
 
 class DungeonMasterService {
-    DungeonMasterPrompt = `You are a skillful dungeon master. You must guide your players through an engaging and fun D&D 5th Edition adventure! Only tell players what they're actual in-game characters know, nothing more. Remember good story teller don't tell their audience things but instead show them through actions and descriptions. However avoid being overly verbose. Also avoid talking directly to the player or suggesting their next moves. This game is played in real-time. Reveal nothing about later events to players. Never roll for your players or make decisions for them. Never end the session unless the campaign has come to a finish. Please ensure to balance combat, puzzles, and role-play. Create an engaging storyline as we go along, always adjusting to what the players do. Please manage experience points and character leveling. Please follow the rules of D&D 5E. For example ask players to roll skill checks when needed. If a player fails an ability check, guide the story forward via alternate routes. Don't hesitate to spring traps, design challenging combat scenarios, and pose difficult decisions. Your goal is to guide, challenge, and adapt to player actions to deliver a unique, memorable adventure! Everything you say will be shown to the players. If you ask for a skill check never tell players what will or might happen before they tell you what they rolled.`;
+    DungeonMasterPrompt = `You are a skillful dungeon master. You must guide your players through an engaging and fun D&D 5th Edition adventure! Only tell players what they're actual in-game characters know, nothing more. Remember good story teller don't tell their audience things but instead show them through actions and descriptions. However avoid being overly verbose. Also avoid talking directly to the player or suggesting their next moves. This game is played in real-time. Reveal nothing about later events to players. Never roll for your players or make decisions for them. Never end the session unless the campaign has come to a finish. Please ensure to balance combat, puzzles, and role-play. Create an engaging storyline as we go along, always adjusting to what the players do. Please manage experience points and character leveling. Please follow the rules of D&D 5E. For example ask players to roll skill checks when needed. If a player fails an ability check, guide the story forward via alternate routes. Don't hesitate to spring traps, design challenging combat scenarios, and pose difficult decisions. Your goal is to guide, challenge, and adapt to player actions to deliver a unique, memorable adventure! Everything you say will be shown to the players. If you ask for a skill check only ask that they roll the die and tell them which modifier they should add, nothing more. Never tell players what will or might happen before they tell you what they rolled. Also DO NOT GIVE ANY META COMMENTARY, only speak for NPCs and tell players how the evironment acts and reacts their decisions. \n Do not directly address the player, prompt specific actions or decisions from them. It can lead to the player feeling more like they are being told what to do rather than making their own choices in the narrative.`;
 
     // Prompt get iteratively update the session state with new story information and return the new state
     private firstPrompt = "The following is the current session notes of a 5E Dungeons & Dragons campaign."
@@ -61,11 +63,13 @@ class DungeonMasterService {
         messages: Message[],
         state: string
         ): ChatCompletionMessageParam[] {
+        // const campaignStory: string = "[Campaign Story (this is the story and plan for the campaign) SECRET, PRIVATE FOR DM ONLY]\n" + firstCampaign;
         const sessionState: string = "[Session State (this is the current state of the campaign)]\n" + state;
         const recentMemoryContext: string = "[Conversation History (this is the most recent conversation from the campaign)]\n" + recentMessages.reverse().map((memory) => memory.content).join(" ");
         const relevantMemoryContext: string = "[Story History (these are old tidbits from the campaign that might be relevant to what is going on now. Not recent.)]\n" + relevantMessages.reverse().map((memory) => memory.content).join(" ");
         let promptMessages: ChatCompletionMessageParam[] = [
-            { content: this.DungeonMasterPrompt, role: "system" },
+            { content: DungeonMasterPromptV2, role: "system" },
+            // { content: campaignStory, role: "system" },
             { content: sessionState, role: "system" },
             { content: relevantMemoryContext, role: "assistant" },
             { content: recentMemoryContext, role: "assistant" },
@@ -76,6 +80,30 @@ class DungeonMasterService {
         }
 
         return promptMessages;
+    }
+
+    formatMessagesAnthropic(
+        recentMessages: Message[],
+        relevantMessages: Message[],
+        messages: Message[],
+        state: string
+        ): {messages: MessageParam[], systemPrompt: string} {
+        // const campaignStory: string = "[Campaign Story (this is the story and plan for the campaign) SECRET, PRIVATE FOR DM ONLY]\n" + firstCampaign;
+        const sessionState: string = "[Session State (this is the current state of the campaign)]\n" + state;
+        // const systemPrompt = DungeonMasterPromptV2 + "\n\n" + campaignStory + "\n\n" + sessionState;
+        const systemPrompt = DungeonMasterPromptV2 + "\n\n" + sessionState;
+        const recentMemoryContext: string = "[Conversation History (this is the most recent conversation from the campaign)]\n" + recentMessages.reverse().map((memory) => memory.content).join(" ") + "\n\n";
+        const relevantMemoryContext: string = "[Story History (these are old tidbits from the campaign that might be relevant to what is going on now. Not recent.)]\n" + relevantMessages.reverse().map((memory) => memory.content).join(" ") + "\n\n";
+        
+        let userMessageContent = "[New Messages] \n" + messages.map((message) => message.roomToPlayer.characterName + " said: \n" + message.content);
+
+        let promptMessages: MessageParam[] = [
+            { content: relevantMemoryContext + recentMemoryContext + userMessageContent, role: "user" },
+        ];
+
+        console
+
+        return {messages: promptMessages, systemPrompt: systemPrompt};
     }
 }
 
