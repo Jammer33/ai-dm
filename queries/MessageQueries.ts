@@ -56,6 +56,7 @@ class MessageQueries {
                 campaignToken: campaignToken,
                 userToken: "DM",
             },
+            order: [['createdAt', 'DESC']],
         });
         
         return Message.findAll({
@@ -70,6 +71,8 @@ class MessageQueries {
                 attributes: ['characterName'], 
                 where: { campaignToken: campaignToken } 
             }],
+            order: [['createdAt', 'ASC']],
+            limit: 20,
         });
     }
 
